@@ -14,7 +14,9 @@ export async function run(): Promise<void> {
     const sstFolder = core.getInput('sst-folder') || './'
 
     const packageLockPath = path.resolve(sstFolder, 'package-lock.json')
+    core.info(`'package-lock' path: ${packageLockPath}`)
     const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts')
+    core.info(`'sst.config.ts' path: ${sstConfigPath}`)
 
     const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
     const nodeModulesSst = packageLock['node_modules/sst']
