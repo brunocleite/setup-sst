@@ -63991,8 +63991,8 @@ const fs = __importStar(__nccwpck_require__(7147));
  */
 async function run() {
     try {
-        const packageLockPath = core.getInput('package-lock');
-        const sstConfigPath = core.getInput('sst-config');
+        const packageLockPath = core.getInput('package-lock') || './package-lock.json';
+        const sstConfigPath = core.getInput('sst-config') || './sst.config.ts';
         const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
         const sstVersion = packageLock['node_modules/sst'].version;
         if (!sstVersion) {

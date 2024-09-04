@@ -10,8 +10,10 @@ import * as fs from 'fs'
  */
 export async function run(): Promise<void> {
   try {
-    const packageLockPath: string = core.getInput('package-lock')
-    const sstConfigPath: string = core.getInput('sst-config')
+    const packageLockPath: string =
+      core.getInput('package-lock') || './package-lock.json'
+    const sstConfigPath: string =
+      core.getInput('sst-config') || './sst.config.ts'
 
     const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
     const sstVersion = packageLock['node_modules/sst'].version
