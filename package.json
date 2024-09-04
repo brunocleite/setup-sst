@@ -1,7 +1,7 @@
 {
   "name": "typescript-action",
   "description": "GitHub Actions TypeScript template",
-  "version": "0.0.15",
+  "version": "0.0.17",
   "author": "",
   "private": true,
   "homepage": "https://github.com/actions/typescript-action",
@@ -24,6 +24,7 @@
     "node": ">=21"
   },
   "scripts": {
+    "prerelease": "npm version patch --no-git-tag-version && npm run bundle && echo 'Commit files and run: npm run release'",
     "bundle": "npm run format:write && npm run package",
     "ci-test": "npx jest",
     "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",

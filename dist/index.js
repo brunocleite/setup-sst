@@ -63994,7 +63994,7 @@ async function run() {
         const packageLockPath = core.getInput('package-lock') || './package-lock.json';
         const sstConfigPath = core.getInput('sst-config') || './sst.config.ts';
         const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
-        const sstVersion = packageLock['node_modules/sst'].version;
+        const sstVersion = packageLock['node_modules/sst']?.version;
         if (!sstVersion) {
             core.setFailed('SST version could not be parsed');
             return;
