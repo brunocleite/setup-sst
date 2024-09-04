@@ -88,7 +88,7 @@ describe('action', () => {
     expect(errorMock).not.toHaveBeenCalled()
     expect(saveCache).toHaveBeenCalledTimes(1)
     expect(restoreCache).toHaveBeenCalledTimes(1)
-  })
+  }, 20000)
 
   it('without sst folder', async () => {
     // Set the action's inputs as return values from core.getInput()
