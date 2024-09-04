@@ -1,5 +1,11 @@
 # SST v3 GitHub Actions setup
 
+[![GitHub Super-Linter](https://github.com/brunocleite/setup-sst/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
+![CI](https://github.com/brunocleite/setup-sst/actions/workflows/ci.yml/badge.svg)
+[![Check dist/](https://github.com/brunocleite/setup-sst/actions/workflows/check-dist.yml/badge.svg)](https://github.com/brunocleite/setup-sst/actions/workflows/check-dist.yml)
+[![CodeQL](https://github.com/brunocleite/setup-sst/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/brunocleite/setup-sst/actions/workflows/codeql-analysis.yml)
+[![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
+
 This GitHub Action will prepare your [SST](https://sst.dev) v3 application by
 installing the providers.
 

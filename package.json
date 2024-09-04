@@ -1,21 +1,24 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.33",
+  "name": "setup-sst-v3",
+  "description": "GitHub Actions to setup SST v3 with caching enabled",
+  "version": "0.0.37",
   "author": "",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/brunocleite/setup-sst",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/brunocleite/setup-sst.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/brunocleite/setup-sst/issues"
   },
   "keywords": [
     "actions",
     "node",
-    "setup"
+    "setup",
+    "sst",
+    "iac",
+    "pulumi"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -24,7 +27,7 @@
     "node": ">=21"
   },
   "scripts": {
-    "prerelease": "npm run lint && npm run bundle && npm version patch --no-git-tag-version && echo '\n\n-=-= COMMIT FILES NOW =-=-\n'",
+    "prerelease": "npm run all && npm version patch --no-git-tag-version && echo '\n\n-=-= COMMIT FILES NOW =-=-\n'",
     "release": "bash ./script/release",
     "bundle": "npm run format:write && npm run package",
     "ci-test": "npx jest",
