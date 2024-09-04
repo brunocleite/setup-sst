@@ -1,4 +1,4 @@
-name: 'setup-sst'
+name: 'prepare-sst'
 description: 'Setup SST with caching enabled'
 author: 'Bruno Leite'
 
