@@ -1,5 +1,7 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import * as exec from '@actions/exec'
+import * as cache from '@actions/cache'
+import * as glob from '@actions/glob'
 
 /**
  * The main function for the action.
@@ -7,18 +9,27 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const packageLockPath: string = core.getInput('package-lock')
+    const sstConfigPath: string = core.getInput('sst-config')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
-
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const sstVersionOutput = await exec.getExecOutput(
+      `jq -r '.packages."node_modules/sst".version' ${packageLockPath} > .sst-version`
+    )
+    if (sstVersionOutput.exitCode !== 0) {
+      core.setFailed(sstVersionOutput.stderr)
+      return
+    }
+    const sstVersion = sstVersionOutput.stdout
+    core.info(`SST version v${sstVersion} found`)
+    const paths = ['.sst/platform', `${process.env.HOME}/.config/sst/plugins`]
+    const hash = await glob.hashFiles(sstConfigPath)
+    const key = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${hash}`
+    const cacheKey = await cache.restoreCache(paths, key)
+    if (!cacheKey) {
+      core.info(`SST Cache not found, installing SST and saving cache`)
+      await exec.exec('npx sst install')
+      await cache.saveCache(paths, key)
+    }
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
