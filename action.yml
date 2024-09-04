@@ -4,20 +4,17 @@ author: 'Your name or organization here'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: 'heart'
-  color: 'red'
+  icon: 'zap'
+  color: 'blue'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
-    required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+  package-lock:
+    description: 'package-lock.json file location'
+    default: 'package-lock.json'
+  sst-config:
+    description: 'sst.config.ts file location'
+    default: 'sst.config.ts'
 
 runs:
   using: node20
