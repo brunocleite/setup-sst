@@ -35,13 +35,18 @@ export async function run(): Promise<void> {
       core.setFailed('Failed to get HOME folder')
       return
     }
+
+    const sstConfigHash = await glob.hashFiles(sstConfigPath)
+    const key = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${sstConfigHash}`
+
     const paths = [
       path.resolve(sstFolder, '.sst/platform'),
       path.resolve(homeFolder, '.config/sst/plugins')
     ]
-    const hash = await glob.hashFiles(sstConfigPath)
-    const key = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${hash}`
+    core.info(`SST cache paths: ${paths.join(', ')}`)
     const cacheKey = await cache.restoreCache(paths, key)
+    core.info(`SST cache key: ${cacheKey}`)
+
     if (!cacheKey) {
       core.info(`SST Cache not found, installing SST and saving cache`)
       await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder })
