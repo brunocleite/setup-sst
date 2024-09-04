@@ -13,7 +13,7 @@ export async function run(): Promise<void> {
     const sstConfigPath: string = core.getInput('sst-config')
 
     const sstVersionOutput = await exec.getExecOutput(
-      `jq -r '.packages."node_modules/sst".version' ${packageLockPath} > .sst-version`
+      `jq -r '.packages.\"node_modules/sst\".version' ${packageLockPath}`
     )
     if (sstVersionOutput.exitCode !== 0) {
       core.setFailed(sstVersionOutput.stderr)

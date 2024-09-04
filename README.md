@@ -1,6 +1,6 @@
-# SST v3 Github Actions setup
+# SST v3 GitHub Actions setup
 
-This Github Action will prepare your [SST](https://sst.dev) v3 application by
+This GitHub Action will prepare your [SST](https://sst.dev) v3 application by
 installing the providers.
 
 It automatically caches the providers if SST version and `sst.config.ts` files
@@ -16,7 +16,7 @@ have not changed.
 
 Sample with defaults:
 
-```
+```yaml
   - name: Setup SST
     id: setup-sst
     uses: brunocleite/setup-sst-v3@v1
@@ -25,7 +25,7 @@ Sample with defaults:
 
 Sample without defaults:
 
-```
+```yaml
   - name: Setup SST
     id: setup-sst
     uses: brunocleite/setup-sst-v3@v1
