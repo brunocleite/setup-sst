@@ -63994,9 +63994,11 @@ async function run() {
     try {
         const sstFolder = core.getInput('sst-folder') || './';
         const packageLockPath = path.resolve(sstFolder, 'package-lock.json');
+        core.info(`'package-lock' path: ${packageLockPath}`);
         const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
+        core.info(`'sst.config.ts' path: ${sstConfigPath}`);
         const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
-        const nodeModulesSst = packageLock['node_modules/sst'];
+        const nodeModulesSst = packageLock?.packages['node_modules/sst'];
         if (!nodeModulesSst) {
             core.setFailed('SST module is not on package-lock.json, install it first');
             return;
@@ -64021,7 +64023,7 @@ async function run() {
         const cacheKey = await cache.restoreCache(paths, key);
         if (!cacheKey) {
             core.info(`SST Cache not found, installing SST and saving cache`);
-            await exec.exec(`cd ${sstFolder} && npx sst install`);
+            await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder });
             await cache.saveCache(paths, key);
         }
     }

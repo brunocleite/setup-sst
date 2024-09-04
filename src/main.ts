@@ -19,7 +19,7 @@ export async function run(): Promise<void> {
     core.info(`'sst.config.ts' path: ${sstConfigPath}`)
 
     const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
-    const nodeModulesSst = packageLock['node_modules/sst']
+    const nodeModulesSst = packageLock?.packages['node_modules/sst']
     if (!nodeModulesSst) {
       core.setFailed('SST module is not on package-lock.json, install it first')
       return
@@ -44,7 +44,7 @@ export async function run(): Promise<void> {
     const cacheKey = await cache.restoreCache(paths, key)
     if (!cacheKey) {
       core.info(`SST Cache not found, installing SST and saving cache`)
-      await exec.exec(`cd ${sstFolder} && npx sst install`)
+      await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder })
       await cache.saveCache(paths, key)
     }
   } catch (error) {
