@@ -28,8 +28,3 @@ Sample without defaults:
   with:
     sst-folder: './sst'
 ```
-
-How to release?
-
---> Run `npm run release` (remind to commit files before entering version
-number)
