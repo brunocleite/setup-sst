@@ -17,19 +17,25 @@ have not changed.
 Sample with defaults:
 
 ```yaml
-  - name: Setup SST
-    id: setup-sst
-    uses: brunocleite/setup-sst-v3@v1
-
+- name: Setup SST
+  id: setup-sst
+  uses: brunocleite/setup-sst-v3@v1
 ```
 
 Sample without defaults:
 
 ```yaml
-  - name: Setup SST
-    id: setup-sst
-    uses: brunocleite/setup-sst-v3@v1
-    with:
-      package-lock: './package-lock.json'
-      sst-config: './sst.config.ts'
+- name: Setup SST
+  id: setup-sst
+  uses: brunocleite/setup-sst-v3@v1
+  with:
+    package-lock: './package-lock.json'
+    sst-config: './sst.config.ts'
 ```
+
+How to release?
+
+1. Bump version
+2. `npm run bundle`
+3. git commit
+4. `./script/release` with new version from step (1)

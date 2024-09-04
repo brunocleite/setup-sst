@@ -63984,6 +63984,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
 const glob = __importStar(__nccwpck_require__(8090));
+const fs = __importStar(__nccwpck_require__(7147));
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -63992,12 +63993,12 @@ async function run() {
     try {
         const packageLockPath = core.getInput('package-lock');
         const sstConfigPath = core.getInput('sst-config');
-        const sstVersionOutput = await exec.getExecOutput(`jq -r '.packages."node_modules/sst".version' ${packageLockPath} > .sst-version`);
-        if (sstVersionOutput.exitCode !== 0) {
-            core.setFailed(sstVersionOutput.stderr);
+        const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
+        const sstVersion = packageLock['node_modules/sst'].version;
+        if (!sstVersion) {
+            core.setFailed('SST version could not be parsed');
             return;
         }
-        const sstVersion = sstVersionOutput.stdout;
         core.info(`SST version v${sstVersion} found`);
         const paths = ['.sst/platform', `${process.env.HOME}/.config/sst/plugins`];
         const hash = await glob.hashFiles(sstConfigPath);

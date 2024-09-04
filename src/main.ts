@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as cache from '@actions/cache'
 import * as glob from '@actions/glob'
+import * as fs from 'fs'
 
 /**
  * The main function for the action.
@@ -12,14 +13,12 @@ export async function run(): Promise<void> {
     const packageLockPath: string = core.getInput('package-lock')
     const sstConfigPath: string = core.getInput('sst-config')
 
-    const sstVersionOutput = await exec.getExecOutput(
-      `jq -r '.packages.\"node_modules/sst\".version' ${packageLockPath}`
-    )
-    if (sstVersionOutput.exitCode !== 0) {
-      core.setFailed(sstVersionOutput.stderr)
+    const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
+    const sstVersion = packageLock['node_modules/sst'].version
+    if (!sstVersion) {
+      core.setFailed('SST version could not be parsed')
       return
     }
-    const sstVersion = sstVersionOutput.stdout
     core.info(`SST version v${sstVersion} found`)
     const paths = ['.sst/platform', `${process.env.HOME}/.config/sst/plugins`]
     const hash = await glob.hashFiles(sstConfigPath)
