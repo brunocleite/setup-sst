@@ -37,5 +37,5 @@ How to release?
 
 1. Bump version: `npm version patch --no-git-tag-version`
 2. `npm run bundle`
-3. git commit
+3. Git commit
 4. `./script/release` with new version from step (1)

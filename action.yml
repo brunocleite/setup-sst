@@ -9,12 +9,9 @@ branding:
 
 # Define your inputs here.
 inputs:
-  package-lock:
-    description: 'package-lock.json file location'
-    default: 'package-lock.json'
-  sst-config:
-    description: 'sst.config.ts file location'
-    default: 'sst.config.ts'
+  sst-folder:
+    description: 'SST folder location'
+    default: './'
 
 runs:
   using: node20

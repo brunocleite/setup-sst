@@ -1,7 +1,7 @@
 {
   "name": "typescript-action",
   "description": "GitHub Actions TypeScript template",
-  "version": "0.0.21",
+  "version": "0.0.24",
   "author": "",
   "private": true,
   "homepage": "https://github.com/actions/typescript-action",
@@ -24,7 +24,7 @@
     "node": ">=21"
   },
   "scripts": {
-    "prerelease": "npm version patch --no-git-tag-version && npm run bundle && echo '\n\n-=-= Commit files before entering version =-=-\n'",
+    "prerelease": "npm version patch --no-git-tag-version && npm run bundle && echo '\n\n-=-= COMMIT FILES NOW =-=-\n'",
     "release": "bash ./script/release",
     "bundle": "npm run format:write && npm run package",
     "ci-test": "npx jest",

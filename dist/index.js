@@ -63985,14 +63985,16 @@ const exec = __importStar(__nccwpck_require__(1514));
 const cache = __importStar(__nccwpck_require__(7799));
 const glob = __importStar(__nccwpck_require__(8090));
 const fs = __importStar(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
     try {
-        const packageLockPath = core.getInput('package-lock') || './package-lock.json';
-        const sstConfigPath = core.getInput('sst-config') || './sst.config.ts';
+        const sstFolder = core.getInput('sst-folder') || './';
+        const packageLockPath = path.resolve(sstFolder, 'package-lock');
+        const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
         const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
         const sstVersion = packageLock['node_modules/sst']?.version;
         if (!sstVersion) {
@@ -64000,13 +64002,16 @@ async function run() {
             return;
         }
         core.info(`SST version v${sstVersion} found`);
-        const paths = ['.sst/platform', `${process.env.HOME}/.config/sst/plugins`];
+        const paths = [
+            path.resolve(sstFolder, '.sst/platform'),
+            path.resolve(process.env.HOME, '.config/sst/plugins')
+        ];
         const hash = await glob.hashFiles(sstConfigPath);
         const key = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${hash}`;
         const cacheKey = await cache.restoreCache(paths, key);
         if (!cacheKey) {
             core.info(`SST Cache not found, installing SST and saving cache`);
-            await exec.exec('npx sst install');
+            await exec.exec(`cd ${sstFolder} && npx sst install`);
             await cache.saveCache(paths, key);
         }
     }

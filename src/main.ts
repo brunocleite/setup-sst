@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 import * as cache from '@actions/cache'
 import * as glob from '@actions/glob'
 import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * The main function for the action.
@@ -10,10 +11,10 @@ import * as fs from 'fs'
  */
 export async function run(): Promise<void> {
   try {
-    const packageLockPath: string =
-      core.getInput('package-lock') || './package-lock.json'
-    const sstConfigPath: string =
-      core.getInput('sst-config') || './sst.config.ts'
+    const sstFolder = core.getInput('sst-folder') || './'
+
+    const packageLockPath = path.resolve(sstFolder, 'package-lock')
+    const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts')
 
     const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
     const sstVersion = packageLock['node_modules/sst']?.version
@@ -22,13 +23,16 @@ export async function run(): Promise<void> {
       return
     }
     core.info(`SST version v${sstVersion} found`)
-    const paths = ['.sst/platform', `${process.env.HOME}/.config/sst/plugins`]
+    const paths = [
+      path.resolve(sstFolder, '.sst/platform'),
+      path.resolve(process.env.HOME!, '.config/sst/plugins')
+    ]
     const hash = await glob.hashFiles(sstConfigPath)
     const key = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${hash}`
     const cacheKey = await cache.restoreCache(paths, key)
     if (!cacheKey) {
       core.info(`SST Cache not found, installing SST and saving cache`)
-      await exec.exec('npx sst install')
+      await exec.exec(`cd ${sstFolder} && npx sst install`)
       await cache.saveCache(paths, key)
     }
   } catch (error) {
