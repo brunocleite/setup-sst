@@ -2,7 +2,7 @@
 
 // noinspection JSUnusedGlobalSymbols
 export default $config({
-  app(input) {
+  app() {
     return {
       name: 'testapp',
       removal: 'remove',

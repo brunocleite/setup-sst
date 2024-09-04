@@ -13,6 +13,7 @@ ignorePatterns:
   - '**/dist/.*'
   - '**/coverage/.*'
   - '*.json'
+  - '**/sst/.*'
 
 parser: '@typescript-eslint/parser'
 
@@ -21,6 +22,7 @@ parserOptions:
   sourceType: module
   project:
     - './.github/linters/tsconfig.json'
+    - './sst/tsconfig.json'
     - './tsconfig.json'
 
 plugins:
