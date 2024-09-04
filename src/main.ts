@@ -13,11 +13,16 @@ export async function run(): Promise<void> {
   try {
     const sstFolder = core.getInput('sst-folder') || './'
 
-    const packageLockPath = path.resolve(sstFolder, 'package-lock')
+    const packageLockPath = path.resolve(sstFolder, 'package-lock.json')
     const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts')
 
     const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
-    const sstVersion = packageLock['node_modules/sst']?.version
+    const nodeModulesSst = packageLock['node_modules/sst']
+    if (!nodeModulesSst) {
+      core.setFailed('SST module is not on package-lock.json, install it first')
+      return
+    }
+    const sstVersion = nodeModulesSst.version
     if (!sstVersion) {
       core.setFailed('SST version could not be parsed')
       return

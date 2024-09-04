@@ -36,6 +36,6 @@ Sample without defaults:
 How to release?
 
 1. Bump version: `npm version patch --no-git-tag-version`
-2. `npm run bundle`
-3. Git commit
-4. `./script/release` with new version from step (1)
+1. `npm run bundle`
+1. Git commit
+1. `./script/release` with new version from step (1)
