@@ -8,11 +8,8 @@ have not changed.
 
 ## Inputs
 
-- **Optional**: `package-lock` - the location of the `package-lock.json` file.  
-  Defaults to `./package-lock.json`
-
-- **Optional**: `sst-config` - the location of the `sst.config.json` file.  
-  Defaults to `./sst.config.ts`
+- **Optional**: `sst-folder` - the location of the SST folder.  
+  Defaults to `./`
 
 Sample with defaults:
 
@@ -29,13 +26,10 @@ Sample without defaults:
   id: setup-sst
   uses: brunocleite/setup-sst-v3@v1
   with:
-    package-lock: './package-lock.json'
-    sst-config: './sst.config.ts'
+    sst-folder: './sst'
 ```
 
 How to release?
 
-1. Bump version: `npm version patch --no-git-tag-version`
-1. `npm run bundle`
-1. Git commit
-1. `./script/release` with new version from step (1)
+--> Run `npm run release` (remind to commit files before entering version
+number)

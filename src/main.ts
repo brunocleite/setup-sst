@@ -28,9 +28,14 @@ export async function run(): Promise<void> {
       return
     }
     core.info(`SST version v${sstVersion} found`)
+    const homeFolder = process.env.HOME
+    if (!homeFolder) {
+      core.setFailed('Failed to get HOME folder')
+      return
+    }
     const paths = [
       path.resolve(sstFolder, '.sst/platform'),
-      path.resolve(process.env.HOME!, '.config/sst/plugins')
+      path.resolve(homeFolder, '.config/sst/plugins')
     ]
     const hash = await glob.hashFiles(sstConfigPath)
     const key = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${hash}`
