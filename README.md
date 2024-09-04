@@ -9,8 +9,8 @@
 This GitHub Action will prepare your [SST](https://sst.dev) v3 application by
 installing the providers.
 
-It automatically caches the providers if SST version and `sst.config.ts` files
-have not changed.
+It automatically caches the providers if SST version in `package-lock.json` and
+`sst.config.ts` files have not changed.
 
 ## Inputs
 
@@ -34,3 +34,9 @@ Sample without defaults:
   with:
     sst-folder: './sst'
 ```
+
+## Cached folders
+
+- `<sst-folder>/.sst/platform`
+- `<home-folder>/.config/sst/plugins`
+- `<home-folder>/.config/sst/bin`

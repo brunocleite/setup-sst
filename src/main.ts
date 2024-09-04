@@ -41,7 +41,8 @@ export async function run(): Promise<void> {
 
     const paths = [
       path.resolve(sstFolder, '.sst/platform'),
-      path.resolve(homeFolder, '.config/sst/plugins')
+      path.resolve(homeFolder, '.config/sst/plugins'),
+      path.resolve(homeFolder, '.config/sst/bin')
     ]
     core.info(`SST cache paths: ${paths.join(', ')}`)
     const cacheKey = await cache.restoreCache(paths, key)
