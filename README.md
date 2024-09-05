@@ -11,6 +11,7 @@ installing the providers.
 
 It automatically caches the providers if SST version in `package-lock.json` and
 `sst.config.ts` files have not changed.
+It is assuming that your providers are listed in `sst.config.ts` and not referenced to another file.
 
 ## Inputs
 
