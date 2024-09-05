@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as cache from '@actions/cache'
 import { sstCachePaths } from './sst'
+import { mainImpl } from './mainImpl';
 
 /**
  * The post function for the action.
@@ -19,12 +20,12 @@ export async function postImpl(): Promise<void> {
   }
 }
 
-export async function postRun(): Promise<void> {
+export async function postRun(earlyExit?: boolean | undefined): Promise<void> {
   try {
-    await postImpl()
+    await postImpl();
   } catch (err) {
-    console.error(err)
-    process.exit(1)
+    console.error(err);
+    if (earlyExit) process.exit(1);
   }
-  process.exit(0)
+  if (earlyExit) process.exit(0);
 }

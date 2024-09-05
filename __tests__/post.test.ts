@@ -2,15 +2,15 @@
  * Unit tests for the action's entrypoint, src/index.ts
  */
 
-import * as mainImpl from '../src/mainImpl'
+import * as postImpl from '../src/postImpl'
 
 // Mock the action's entrypoint
-const runMock = jest.spyOn(mainImpl, 'mainRun').mockImplementation()
+const runMock = jest.spyOn(postImpl, 'postRun').mockImplementation()
 
-describe('main', () => {
+describe('post', () => {
   it('calls run when imported', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('../src/main')
+    require('../src/post')
 
     expect(runMock).toHaveBeenCalled()
   })
