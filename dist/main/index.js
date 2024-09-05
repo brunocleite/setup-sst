@@ -64030,6 +64030,7 @@ async function mainImpl() {
         const cacheRestored = await cache.restoreCache(sstPaths, cacheKey);
         if (cacheRestored) {
             core.info(`SST cache key: ${cacheRestored}`);
+            core.saveState('cacheRestored', true);
         }
         else {
             core.info(`SST cache not found, installing SST...`);

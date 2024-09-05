@@ -61595,6 +61595,9 @@ const sst_1 = __nccwpck_require__(9225);
  */
 async function postImpl() {
     try {
+        const cacheWasRestored = core.getState('cacheRestored');
+        if (cacheWasRestored)
+            return;
         const sstFolder = core.getState('sstFolder');
         const homeFolder = core.getState('homeFolder');
         const sstPaths = (0, sst_1.sstCachePaths)(sstFolder, homeFolder);

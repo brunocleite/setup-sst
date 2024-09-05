@@ -8,6 +8,9 @@ import { sstCachePaths } from './sst'
  */
 export async function postImpl(): Promise<void> {
   try {
+    const cacheWasRestored = core.getState('cacheRestored')
+    if (cacheWasRestored) return
+
     const sstFolder = core.getState('sstFolder')
     const homeFolder = core.getState('homeFolder')
     const sstPaths = sstCachePaths(sstFolder, homeFolder)

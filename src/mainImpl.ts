@@ -58,6 +58,7 @@ export async function mainImpl(): Promise<void> {
     const cacheRestored = await cache.restoreCache(sstPaths, cacheKey)
     if (cacheRestored) {
       core.info(`SST cache key: ${cacheRestored}`)
+      core.saveState('cacheRestored', true)
     } else {
       core.info(`SST cache not found, installing SST...`)
       await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder })
