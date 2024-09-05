@@ -15,8 +15,6 @@ const runMock = jest.spyOn(postImpl, 'postImpl')
 
 // Mock the GitHub Actions core library
 let errorMock: jest.SpiedFunction<typeof core.error>
-let getInputMock: jest.SpiedFunction<typeof core.getInput>
-let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
 let restoreCache: jest.SpiedFunction<typeof cache.restoreCache>
 let saveCache: jest.SpiedFunction<typeof cache.saveCache>
 
@@ -25,14 +23,11 @@ describe('post action', () => {
     jest.clearAllMocks()
 
     errorMock = jest.spyOn(core, 'error').mockImplementation()
-    getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
     restoreCache = jest.spyOn(cache, 'restoreCache').mockImplementation()
     saveCache = jest.spyOn(cache, 'saveCache').mockImplementation()
   })
 
   it('post run', async () => {
-
     await postImpl.postImpl()
     expect(runMock).toHaveReturned()
 
@@ -40,5 +35,4 @@ describe('post action', () => {
     expect(saveCache).toHaveBeenCalled()
     expect(restoreCache).not.toHaveBeenCalled()
   })
-
 })
