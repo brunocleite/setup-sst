@@ -72612,7 +72612,7 @@ var exports = __webpack_exports__;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const postImpl_1 = __nccwpck_require__(2451);
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-(0, postImpl_1.postRun)();
+(0, postImpl_1.postRun)(true);
 
 })();
 
