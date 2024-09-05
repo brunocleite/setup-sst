@@ -1,6 +1,6 @@
-import * as core from '@actions/core';
-import * as cache from '@actions/cache';
-import { sstCachePaths } from './sst';
+import * as core from '@actions/core'
+import * as cache from '@actions/cache'
+import { sstCachePaths } from './sst'
 
 /**
  * The post function for the action.
@@ -8,24 +8,23 @@ import { sstCachePaths } from './sst';
  */
 export async function postImpl(): Promise<void> {
   try {
-    const sstFolder = core.getState('sstFolder');
-    const homeFolder = core.getState('homeFolder');
-    const sstPaths = sstCachePaths(sstFolder, homeFolder);
+    const sstFolder = core.getState('sstFolder')
+    const homeFolder = core.getState('homeFolder')
+    const sstPaths = sstCachePaths(sstFolder, homeFolder)
 
-    const cacheKey = core.getState('cacheKey');
-    await cache.saveCache(sstPaths, cacheKey);
-
+    const cacheKey = core.getState('cacheKey')
+    await cache.saveCache(sstPaths, cacheKey)
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message);
+    if (error instanceof Error) core.setFailed(error.message)
   }
 }
 
 export async function postRun(): Promise<void> {
   try {
-    await postImpl();
+    await postImpl()
   } catch (err) {
-    console.error(err);
-    process.exit(1);
+    console.error(err)
+    process.exit(1)
   }
-  process.exit(0);
+  process.exit(0)
 }

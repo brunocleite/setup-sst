@@ -16,7 +16,9 @@ export async function mainImpl(): Promise<void> {
     core.saveState('sstFolder', sstFolder);
 
     if (!folderExists(path.resolve(sstFolder, 'node_modules'))) {
-      core.setFailed('node_modules folder not found, please run npm install first');
+      core.setFailed(
+        'node_modules folder not found, please run npm install first',
+      );
       return;
     }
 
@@ -60,21 +62,20 @@ export async function mainImpl(): Promise<void> {
       core.info(`SST cache not found, installing SST...`);
       await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder });
     }
-    process.exit(0);
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message);
   }
 }
 
-export async function mainRun(): Promise<void> {
+export async function mainRun(earlyExit?: boolean | undefined): Promise<void> {
   try {
     await mainImpl();
   } catch (err) {
     console.error(err);
-    process.exit(1);
+    if (earlyExit) process.exit(1);
   }
-  process.exit(0);
+  if (earlyExit) process.exit(0);
 }
 
 function folderExists(path: string): boolean {
