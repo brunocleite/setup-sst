@@ -10,14 +10,17 @@ This GitHub Action will prepare your [SST](https://sst.dev) v3 application by
 installing the providers.
 
 It automatically caches the providers if SST version in `package-lock.json` and
-`sst.config.ts` files have not changed. It is assuming that your providers are
+`sst.config.ts` files have not changed.  
+It is assuming that your providers are
 listed in `sst.config.ts` and not referenced to another file.
 
 ## Inputs
 
 - **Optional**: `sst-folder` - the location of the SST folder.  
   Defaults to `./`
-
+- **Optional**: `platform-only` - only caches the platform. Useful for linting runs that will not deploy.
+  Defaults to `false`
+- 
 Sample with defaults:
 
 ```yaml
@@ -26,7 +29,7 @@ Sample with defaults:
   uses: brunocleite/setup-sst-v3@v1
 ```
 
-Sample without defaults:
+Sample specifying a different SST folder other than root and platform-only:
 
 ```yaml
 - name: Setup SST
@@ -34,10 +37,11 @@ Sample without defaults:
   uses: brunocleite/setup-sst-v3@v1
   with:
     sst-folder: 'sst'
+    platform-only: true
 ```
 
 ## Cached folders
 
-- `<sst-folder>/.sst/platform`
-- `<home-folder>/.config/sst/plugins`
-- `<home-folder>/.config/sst/bin`
+- `<sst-folder>/.sst/platform` - everytime and platform-only
+- `<home-folder>/.config/sst/plugins` - everytime
+- `<home-folder>/.config/sst/bin` - everytime

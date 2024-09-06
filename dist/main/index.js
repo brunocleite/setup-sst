@@ -63968,8 +63968,8 @@ var State;
 })(State || (exports.State = State = {}));
 var Input;
 (function (Input) {
-    Input["SstFolder"] = "SST_FOLDER";
-    Input["PlatformOnly"] = "PLATFORM_ONLY";
+    Input["SstFolder"] = "sst-folder";
+    Input["PlatformOnly"] = "platform-only";
 })(Input || (exports.Input = Input = {}));
 
 
