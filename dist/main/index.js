@@ -64021,7 +64021,9 @@ async function mainImpl() {
     // SST Folder
     const sstFolder = core.getInput(contants_1.Input.SstFolder) || './';
     core.saveState(contants_1.State.SstFolder, sstFolder);
-    if (!folderExists(path.resolve(sstFolder, 'node_modules'))) {
+    const nodeModulesPath = path.resolve(sstFolder, 'node_modules');
+    core.info("'node_modules' path: " + nodeModulesPath);
+    if (!fs.existsSync(nodeModulesPath)) {
         throw new Error('node_modules folder not found, please run npm install first');
     }
     // Basic files verification
@@ -64092,9 +64094,6 @@ async function mainRun(earlyExit) {
     }
     if (earlyExit)
         process.exit(0);
-}
-function folderExists(path) {
-    return fs.existsSync(path) && fs.lstatSync(path).isDirectory();
 }
 
 

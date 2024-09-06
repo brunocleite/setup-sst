@@ -61624,7 +61624,8 @@ async function postImpl() {
         return;
     const cacheKey = core.getState(contants_1.State.CacheKey);
     const cachePaths = JSON.parse(core.getState(contants_1.State.CachePaths) || '[]');
-    await cache.saveCache(cachePaths, cacheKey);
+    if (cachePaths && cachePaths.length > 0)
+        await cache.saveCache(cachePaths, cacheKey);
 }
 async function postRun(earlyExit) {
     try {

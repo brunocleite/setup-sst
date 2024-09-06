@@ -38,9 +38,6 @@ jobs:
           cd sst
           npm ci
 
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-
       - name: Check Format
         id: npm-format-check
         run: npm run format:check
