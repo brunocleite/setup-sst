@@ -14,7 +14,9 @@ export async function mainImpl(): Promise<void> {
   // SST Folder
   const sstFolder = core.getInput(Input.SstFolder) || './'
   core.saveState(State.SstFolder, sstFolder)
-  if (!folderExists(path.resolve(sstFolder, 'node_modules'))) {
+  const nodeModulesPath = path.resolve(sstFolder, 'node_modules')
+  core.info("'node_modules' path: " + nodeModulesPath)
+  if (!fs.existsSync(nodeModulesPath)) {
     throw new Error(
       'node_modules folder not found, please run npm install first'
     )
@@ -89,8 +91,4 @@ export async function mainRun(earlyExit?: boolean | undefined): Promise<void> {
     throw error
   }
   if (earlyExit) process.exit(0)
-}
-
-function folderExists(path: string): boolean {
-  return fs.existsSync(path) && fs.lstatSync(path).isDirectory()
 }
