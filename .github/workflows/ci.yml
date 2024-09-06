@@ -38,6 +38,9 @@ jobs:
           cd sst
           npm ci
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+
       - name: Check Format
         id: npm-format-check
         run: npm run format:check
@@ -58,6 +61,9 @@ jobs:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
+
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
 
       - name: Npm install on SST folder
         id: npm-sst
