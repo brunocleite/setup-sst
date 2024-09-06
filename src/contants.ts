@@ -9,5 +9,5 @@ export enum State {
 
 export enum Input {
   SstFolder = 'SST_FOLDER',
-  PlatformOnly = 'PLATFORM_ONLY',
+  PlatformOnly = 'PLATFORM_ONLY'
 }
