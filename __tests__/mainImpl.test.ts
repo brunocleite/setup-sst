@@ -36,6 +36,8 @@ describe('main action', () => {
       switch (name) {
         case Input.SstFolder:
           return './sst'
+        case Input.PlatformOnly:
+          return 'false'
         default:
           return ''
       }
@@ -73,6 +75,8 @@ describe('main action', () => {
       switch (name) {
         case Input.SstFolder:
           return './sst'
+        case Input.PlatformOnly:
+          return 'false'
         default:
           return ''
       }

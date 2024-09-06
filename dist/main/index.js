@@ -63961,7 +63961,6 @@ var State;
 (function (State) {
     State["SstFolder"] = "SST_FOLDER";
     State["HomeFolder"] = "HOME_FOLDER";
-    State["PlatformOnly"] = "PLATFORM_ONLY";
     State["CacheKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";
@@ -64055,8 +64054,7 @@ async function mainImpl() {
     const binPath = path.resolve(homeFolder, '.config/sst/bin');
     // Caching
     const sstConfigHash = await glob.hashFiles(sstConfigPath);
-    const platformOnly = Boolean(core.getInput(contants_1.Input.PlatformOnly) || false);
-    core.saveState(contants_1.State.PlatformOnly, platformOnly);
+    const platformOnly = strictParseBoolean(core.getInput(contants_1.Input.PlatformOnly));
     let cacheKey;
     let cachePaths;
     if (platformOnly) {
@@ -64094,6 +64092,23 @@ async function mainRun(earlyExit) {
     }
     if (earlyExit)
         process.exit(0);
+}
+function strictParseBoolean(value) {
+    if (value === null || value === undefined) {
+        throw new Error('Invalid boolean value: null or undefined');
+    }
+    const lowerValue = value.toLowerCase().trim();
+    if (lowerValue === 'true' || lowerValue === '1' || lowerValue === 'yes') {
+        return true;
+    }
+    else if (lowerValue === 'false' ||
+        lowerValue === '0' ||
+        lowerValue === 'no') {
+        return false;
+    }
+    else {
+        throw new Error(`Invalid boolean value: ${value}`);
+    }
 }
 
 

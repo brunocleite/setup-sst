@@ -61566,7 +61566,6 @@ var State;
 (function (State) {
     State["SstFolder"] = "SST_FOLDER";
     State["HomeFolder"] = "HOME_FOLDER";
-    State["PlatformOnly"] = "PLATFORM_ONLY";
     State["CacheKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";

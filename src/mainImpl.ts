@@ -56,8 +56,7 @@ export async function mainImpl(): Promise<void> {
 
   // Caching
   const sstConfigHash = await glob.hashFiles(sstConfigPath)
-  const platformOnly = Boolean(core.getInput(Input.PlatformOnly) || false)
-  core.saveState(State.PlatformOnly, platformOnly)
+  const platformOnly = strictParseBoolean(core.getInput(Input.PlatformOnly))
   let cacheKey
   let cachePaths
   if (platformOnly) {
@@ -91,4 +90,24 @@ export async function mainRun(earlyExit?: boolean | undefined): Promise<void> {
     throw error
   }
   if (earlyExit) process.exit(0)
+}
+
+function strictParseBoolean(value: string | null | undefined): boolean {
+  if (value === null || value === undefined) {
+    throw new Error('Invalid boolean value: null or undefined')
+  }
+
+  const lowerValue = value.toLowerCase().trim()
+
+  if (lowerValue === 'true' || lowerValue === '1' || lowerValue === 'yes') {
+    return true
+  } else if (
+    lowerValue === 'false' ||
+    lowerValue === '0' ||
+    lowerValue === 'no'
+  ) {
+    return false
+  } else {
+    throw new Error(`Invalid boolean value: ${value}`)
+  }
 }
