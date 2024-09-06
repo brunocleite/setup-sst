@@ -61561,7 +61561,7 @@ exports["default"] = _default;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.State = void 0;
+exports.Input = exports.State = void 0;
 var State;
 (function (State) {
     State["SstFolder"] = "SST_FOLDER";
@@ -61571,6 +61571,11 @@ var State;
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";
 })(State || (exports.State = State = {}));
+var Input;
+(function (Input) {
+    Input["SstFolder"] = "SST_FOLDER";
+    Input["PlatformOnly"] = "PLATFORM_ONLY";
+})(Input || (exports.Input = Input = {}));
 
 
 /***/ }),
@@ -61614,27 +61619,23 @@ const contants_1 = __nccwpck_require__(5431);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function postImpl() {
-    try {
-        const cacheMatchedKey = core.getState(contants_1.State.CacheMatchedKey);
-        if (cacheMatchedKey && cacheMatchedKey.length > 0)
-            return;
-        const cacheKey = core.getState(contants_1.State.CacheKey);
-        const cachePaths = JSON.parse(core.getState(contants_1.State.CachePaths) || '[]');
-        await cache.saveCache(cachePaths, cacheKey);
-    }
-    catch (error) {
-        if (error instanceof Error)
-            core.setFailed(error.message);
-    }
+    const cacheMatchedKey = core.getState(contants_1.State.CacheMatchedKey);
+    if (cacheMatchedKey && cacheMatchedKey.length > 0)
+        return;
+    const cacheKey = core.getState(contants_1.State.CacheKey);
+    const cachePaths = JSON.parse(core.getState(contants_1.State.CachePaths) || '[]');
+    await cache.saveCache(cachePaths, cacheKey);
 }
 async function postRun(earlyExit) {
     try {
         await postImpl();
     }
-    catch (err) {
-        console.error(err);
+    catch (error) {
+        if (error instanceof Error)
+            core.setFailed(error.message);
         if (earlyExit)
             process.exit(1);
+        throw error;
     }
     if (earlyExit)
         process.exit(0);

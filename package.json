@@ -1,7 +1,7 @@
 {
   "name": "setup-sst-v3",
   "description": "GitHub Actions to setup SST v3 with caching enabled",
-  "version": "0.0.50",
+  "version": "0.0.52",
   "author": "",
   "private": true,
   "homepage": "https://github.com/brunocleite/setup-sst",

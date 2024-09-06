@@ -63956,7 +63956,7 @@ exports["default"] = _default;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.State = void 0;
+exports.Input = exports.State = void 0;
 var State;
 (function (State) {
     State["SstFolder"] = "SST_FOLDER";
@@ -63966,6 +63966,11 @@ var State;
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";
 })(State || (exports.State = State = {}));
+var Input;
+(function (Input) {
+    Input["SstFolder"] = "SST_FOLDER";
+    Input["PlatformOnly"] = "PLATFORM_ONLY";
+})(Input || (exports.Input = Input = {}));
 
 
 /***/ }),
@@ -64013,85 +64018,77 @@ const contants_1 = __nccwpck_require__(5431);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function mainImpl() {
-    try {
-        // SST Folder
-        const sstFolder = core.getInput('sst-folder') || './';
-        core.saveState(contants_1.State.SstFolder, sstFolder);
-        if (!folderExists(path.resolve(sstFolder, 'node_modules'))) {
-            core.setFailed('node_modules folder not found, please run npm install first');
-            return;
-        }
-        // Basic files verification
-        const packageLockPath = path.resolve(sstFolder, 'package-lock.json');
-        core.info(`'package-lock' path: ${packageLockPath}`);
-        const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
-        core.info(`'sst.config.ts' path: ${sstConfigPath}`);
-        const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
-        // SST dependency present
-        const nodeModulesSst = packageLock?.packages['node_modules/sst'];
-        if (!nodeModulesSst) {
-            core.setFailed('SST module is not on package-lock.json, install it first');
-            return;
-        }
-        // SST version
-        const sstVersion = nodeModulesSst.version;
-        if (!sstVersion) {
-            core.setFailed('SST version could not be parsed');
-            return;
-        }
-        core.info(`SST version v${sstVersion} found`);
-        // Home folder
-        const homeFolder = process.env.HOME;
-        if (!homeFolder) {
-            core.setFailed('Failed to get HOME folder');
-            return;
-        }
-        core.saveState(contants_1.State.HomeFolder, homeFolder);
-        //Paths
-        const platformPath = path.resolve(sstFolder, '.sst/platform');
-        const pluginsPath = path.resolve(homeFolder, '.config/sst/plugins');
-        const binPath = path.resolve(homeFolder, '.config/sst/bin');
-        // Caching
-        const sstConfigHash = await glob.hashFiles(sstConfigPath);
-        const platformOnly = Boolean(core.getInput('platform-only') || 'false');
-        core.saveState(contants_1.State.PlatformOnly, platformOnly);
-        let cacheKey;
-        let cachePaths;
-        if (platformOnly) {
-            cachePaths = [platformPath];
-            cacheKey = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${sstConfigHash}`;
-        }
-        else {
-            cachePaths = [platformPath, pluginsPath, binPath];
-            cacheKey = `${process.env.RUNNER_OS}-sst-${sstVersion}-${sstConfigHash}`;
-        }
-        core.saveState(contants_1.State.CacheKey, cacheKey);
-        core.saveState(contants_1.State.CachePaths, cachePaths);
-        core.info(`SST cache paths: ${cachePaths.join(', ')}`);
-        // Restore cache
-        const cacheMatchedKey = await cache.restoreCache(cachePaths, cacheKey);
-        if (cacheMatchedKey) {
-            core.info(`SST cache key: ${cacheMatchedKey}`);
-            core.saveState(contants_1.State.CacheMatchedKey, cacheMatchedKey);
-        }
-        else {
-            core.info(`SST cache not found, installing SST...`);
-            await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder });
-        }
+    // SST Folder
+    const sstFolder = core.getInput(contants_1.Input.SstFolder) || './';
+    core.saveState(contants_1.State.SstFolder, sstFolder);
+    if (!folderExists(path.resolve(sstFolder, 'node_modules'))) {
+        throw new Error('node_modules folder not found, please run npm install first');
     }
-    catch (error) {
-        if (error instanceof Error)
-            core.setFailed(error.message);
+    // Basic files verification
+    const packageLockPath = path.resolve(sstFolder, 'package-lock.json');
+    core.info(`'package-lock' path: ${packageLockPath}`);
+    const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
+    core.info(`'sst.config.ts' path: ${sstConfigPath}`);
+    const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
+    // SST dependency present
+    const nodeModulesSst = packageLock?.packages['node_modules/sst'];
+    if (!nodeModulesSst) {
+        throw new Error('SST module is not on package-lock.json, install it first');
+    }
+    // SST version
+    const sstVersion = nodeModulesSst.version;
+    if (!sstVersion) {
+        throw new Error('SST version could not be parsed');
+    }
+    core.info(`SST version v${sstVersion} found`);
+    // Home folder
+    const homeFolder = process.env.HOME;
+    if (!homeFolder) {
+        throw new Error('Failed to get HOME folder');
+    }
+    core.saveState(contants_1.State.HomeFolder, homeFolder);
+    //Paths
+    const platformPath = path.resolve(sstFolder, '.sst/platform');
+    const pluginsPath = path.resolve(homeFolder, '.config/sst/plugins');
+    const binPath = path.resolve(homeFolder, '.config/sst/bin');
+    // Caching
+    const sstConfigHash = await glob.hashFiles(sstConfigPath);
+    const platformOnly = Boolean(core.getInput(contants_1.Input.PlatformOnly) || 'false');
+    core.saveState(contants_1.State.PlatformOnly, platformOnly);
+    let cacheKey;
+    let cachePaths;
+    if (platformOnly) {
+        cachePaths = [platformPath];
+        cacheKey = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${sstConfigHash}`;
+    }
+    else {
+        cachePaths = [platformPath, pluginsPath, binPath];
+        cacheKey = `${process.env.RUNNER_OS}-sst-${sstVersion}-${sstConfigHash}`;
+    }
+    core.saveState(contants_1.State.CacheKey, cacheKey);
+    core.saveState(contants_1.State.CachePaths, cachePaths);
+    core.info(`SST cache paths: ${cachePaths.join(', ')}`);
+    // Restore cache
+    const cacheMatchedKey = await cache.restoreCache(cachePaths, cacheKey);
+    if (cacheMatchedKey) {
+        core.info(`SST cache key: ${cacheMatchedKey}`);
+        core.saveState(contants_1.State.CacheMatchedKey, cacheMatchedKey);
+    }
+    else {
+        core.info(`SST cache not found, installing SST...`);
+        await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder });
     }
 }
 async function mainRun(earlyExit) {
     try {
         await mainImpl();
     }
-    catch (err) {
-        console.error(err);
+    catch (error) {
+        if (error instanceof Error)
+            core.setFailed(error.message);
         if (earlyExit)
             process.exit(1);
+        throw error;
     }
     if (earlyExit)
         process.exit(0);
