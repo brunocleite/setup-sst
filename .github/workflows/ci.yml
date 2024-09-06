@@ -55,7 +55,7 @@ jobs:
 
       - name: Npm install on SST folder
         id: npm-sst
-        run: | 
+        run: |
           cd sst
           npm ci
 
