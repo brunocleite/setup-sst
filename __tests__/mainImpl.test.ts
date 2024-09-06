@@ -6,51 +6,52 @@
  * variables following the pattern `INPUT_<INPUT_NAME>`.
  */
 
-import * as core from '@actions/core'
-import * as cache from '@actions/cache'
-import * as mainImpl from '../src/mainImpl'
+import * as core from '@actions/core';
+import * as cache from '@actions/cache';
+import * as mainImpl from '../src/mainImpl';
+import { Input } from '../src/contants';
 
 // Mock the action's main function
-const runMock = jest.spyOn(mainImpl, 'mainImpl')
+const runMock = jest.spyOn(mainImpl, 'mainImpl');
 
 // Mock the GitHub Actions core library
-let errorMock: jest.SpiedFunction<typeof core.error>
-let getInputMock: jest.SpiedFunction<typeof core.getInput>
-let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
-let restoreCache: jest.SpiedFunction<typeof cache.restoreCache>
-let saveCache: jest.SpiedFunction<typeof cache.saveCache>
+let errorMock: jest.SpiedFunction<typeof core.error>;
+let getInputMock: jest.SpiedFunction<typeof core.getInput>;
+let setFailedMock: jest.SpiedFunction<typeof core.setFailed>;
+let restoreCache: jest.SpiedFunction<typeof cache.restoreCache>;
+let saveCache: jest.SpiedFunction<typeof cache.saveCache>;
 
 describe('main action', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.clearAllMocks();
 
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
-    getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    restoreCache = jest.spyOn(cache, 'restoreCache').mockImplementation()
-    saveCache = jest.spyOn(cache, 'saveCache').mockImplementation()
-  })
+    errorMock = jest.spyOn(core, 'error').mockImplementation();
+    getInputMock = jest.spyOn(core, 'getInput').mockImplementation();
+    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation();
+    restoreCache = jest.spyOn(cache, 'restoreCache').mockImplementation();
+    saveCache = jest.spyOn(cache, 'saveCache').mockImplementation();
+  });
 
-  it('with sst folder and cache hit', async () => {
+  it('with proper SST folder and cache hit', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case 'sst-folder':
-          return './sst'
+        case Input.SstFolder:
+          return './sst';
         default:
-          return ''
+          return '';
       }
-    })
+    });
     restoreCache.mockImplementation(async () => {
-      return 'some-cache-key'
-    })
+      return 'some-cache-key';
+    });
 
-    await mainImpl.mainImpl()
-    expect(runMock).toHaveReturned()
+    await mainImpl.mainImpl();
+    expect(runMock).toHaveReturned();
 
-    expect(errorMock).not.toHaveBeenCalled()
-    expect(saveCache).not.toHaveBeenCalled()
-    expect(restoreCache).toHaveBeenCalledTimes(1)
+    expect(errorMock).not.toHaveBeenCalled();
+    expect(saveCache).not.toHaveBeenCalled();
+    expect(restoreCache).toHaveBeenCalledTimes(1);
 
     // Verify that all the core library functions were called correctly
     // expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
@@ -67,46 +68,56 @@ describe('main action', () => {
     //   'time',
     //   expect.stringMatching(timeRegex)
     // )
-  })
+  });
 
-  it('with sst folder and cache miss', async () => {
+  it('with proper SST folder and cache miss', async () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case 'sst-folder':
-          return './sst'
+        case Input.SstFolder:
+          return './sst';
         default:
-          return ''
+          return '';
       }
-    })
+    });
     restoreCache.mockImplementation(async () => {
-      return undefined
-    })
+      return undefined;
+    });
 
-    await mainImpl.mainImpl()
-    expect(runMock).toHaveReturned()
+    await mainImpl.mainImpl();
+    expect(runMock).toHaveReturned();
 
-    expect(errorMock).not.toHaveBeenCalled()
-    expect(saveCache).not.toHaveBeenCalled()
-    expect(restoreCache).toHaveBeenCalledTimes(1)
-  }, 20000)
+    expect(errorMock).not.toHaveBeenCalled();
+    expect(saveCache).not.toHaveBeenCalled();
+    expect(restoreCache).toHaveBeenCalledTimes(1);
+  }, 20000);
 
-  it('without sst folder', async () => {
+  it('with SST folder containing package-lock that has no SST dependency', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
+        case Input.SstFolder:
+          return '';
         default:
-          return ''
+          return '';
       }
-    })
-    restoreCache.mockImplementation(async () => {
-      return undefined
-    })
+    });
+    await expect(() => mainImpl.mainImpl()).rejects.toThrowError('SST module is not on package-lock.json, install it first');
+    expect(runMock).toHaveReturned();
+    expect(errorMock).not.toHaveBeenCalled();
+  });
 
-    await mainImpl.mainImpl()
-    expect(runMock).toHaveReturned()
-    expect(errorMock).not.toHaveBeenCalled()
-    expect(setFailedMock).toHaveBeenCalledWith(
-      'SST module is not on package-lock.json, install it first'
-    )
-  })
-})
+  it('with SST folder containing no node_modules', async () => {
+    // Set the action's inputs as return values from core.getInput()
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case Input.SstFolder:
+          return 'invalid_folder';
+        default:
+          return '';
+      }
+    });
+    await expect(() => mainImpl.mainImpl()).rejects.toThrowError('node_modules folder not found, please run npm install first');
+    expect(runMock).toHaveReturned();
+    expect(errorMock).not.toHaveBeenCalled();
+  });
+});

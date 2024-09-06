@@ -53,6 +53,10 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
       - name: Test Local Action
         id: test-action
         uses: ./
