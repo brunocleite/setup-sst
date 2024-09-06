@@ -4,7 +4,7 @@ import * as cache from '@actions/cache'
 import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as path from 'path'
-import { sstCachePaths } from './sst'
+import { State } from './contants'
 
 /**
  * The main function for the action.
@@ -12,9 +12,9 @@ import { sstCachePaths } from './sst'
  */
 export async function mainImpl(): Promise<void> {
   try {
+    // SST Folder
     const sstFolder = core.getInput('sst-folder') || './'
-    core.saveState('sstFolder', sstFolder)
-
+    core.saveState(State.SstFolder, sstFolder)
     if (!folderExists(path.resolve(sstFolder, 'node_modules'))) {
       core.setFailed(
         'node_modules folder not found, please run npm install first'
@@ -22,18 +22,21 @@ export async function mainImpl(): Promise<void> {
       return
     }
 
+    // Basic files verification
     const packageLockPath = path.resolve(sstFolder, 'package-lock.json')
     core.info(`'package-lock' path: ${packageLockPath}`)
     const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts')
     core.info(`'sst.config.ts' path: ${sstConfigPath}`)
-
     const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'))
+
+    // SST dependency present
     const nodeModulesSst = packageLock?.packages['node_modules/sst']
     if (!nodeModulesSst) {
       core.setFailed('SST module is not on package-lock.json, install it first')
       return
     }
 
+    // SST version
     const sstVersion = nodeModulesSst.version
     if (!sstVersion) {
       core.setFailed('SST version could not be parsed')
@@ -41,30 +44,46 @@ export async function mainImpl(): Promise<void> {
     }
     core.info(`SST version v${sstVersion} found`)
 
+    // Home folder
     const homeFolder = process.env.HOME
     if (!homeFolder) {
       core.setFailed('Failed to get HOME folder')
       return
     }
-    core.saveState('homeFolder', homeFolder)
+    core.saveState(State.HomeFolder, homeFolder)
 
+    //Paths
+    const platformPath = path.resolve(sstFolder, '.sst/platform')
+    const pluginsPath = path.resolve(homeFolder, '.config/sst/plugins')
+    const binPath = path.resolve(homeFolder, '.config/sst/bin')
+
+    // Caching
     const sstConfigHash = await glob.hashFiles(sstConfigPath)
-    const cacheKey = `${process.env.RUNNER_OS}-sst-${sstVersion}-${sstConfigHash}`
-    core.saveState('cacheKey', cacheKey)
+    const platformOnly = Boolean(core.getInput('platform-only') || 'false')
+    core.saveState(State.PlatformOnly, platformOnly)
+    let cacheKey
+    let cachePaths
+    if (platformOnly) {
+      cachePaths = [platformPath]
+      cacheKey = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${sstConfigHash}`
+    } else {
+      cachePaths = [platformPath, pluginsPath, binPath]
+      cacheKey = `${process.env.RUNNER_OS}-sst-${sstVersion}-${sstConfigHash}`
+    }
+    core.saveState(State.CacheKey, cacheKey)
+    core.saveState(State.CachePaths, cachePaths)
+    core.info(`SST cache paths: ${cachePaths.join(', ')}`)
 
-    const sstPaths = sstCachePaths(sstFolder, homeFolder)
-
-    core.info(`SST cache paths: ${sstPaths.join(', ')}`)
-    const cacheRestored = await cache.restoreCache(sstPaths, cacheKey)
-    if (cacheRestored) {
-      core.info(`SST cache key: ${cacheRestored}`)
-      core.saveState('cacheRestored', true)
+    // Restore cache
+    const cacheMatchedKey = await cache.restoreCache(cachePaths, cacheKey)
+    if (cacheMatchedKey) {
+      core.info(`SST cache key: ${cacheMatchedKey}`)
+      core.saveState(State.CacheMatchedKey, cacheMatchedKey)
     } else {
       core.info(`SST cache not found, installing SST...`)
       await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder })
     }
   } catch (error) {
-    // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
 }

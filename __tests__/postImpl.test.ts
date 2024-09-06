@@ -9,6 +9,7 @@
 import * as core from '@actions/core'
 import * as cache from '@actions/cache'
 import * as postImpl from '../src/postImpl'
+import { State } from '../src/contants'
 
 // Mock the action's main function
 const runMock = jest.spyOn(postImpl, 'postImpl')
@@ -17,6 +18,7 @@ const runMock = jest.spyOn(postImpl, 'postImpl')
 let errorMock: jest.SpiedFunction<typeof core.error>
 let restoreCache: jest.SpiedFunction<typeof cache.restoreCache>
 let saveCache: jest.SpiedFunction<typeof cache.saveCache>
+let getState: jest.SpiedFunction<typeof core.getState>
 
 describe('post action', () => {
   beforeEach(() => {
@@ -25,14 +27,40 @@ describe('post action', () => {
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     restoreCache = jest.spyOn(cache, 'restoreCache').mockImplementation()
     saveCache = jest.spyOn(cache, 'saveCache').mockImplementation()
+    getState = jest.spyOn(core, 'getState').mockImplementation()
   })
 
-  it('post run', async () => {
+  it('should save cache without matched key', async () => {
+    getState.mockImplementation(name => {
+      switch (name) {
+        case State.CacheMatchedKey:
+          return ''
+        default:
+          return ''
+      }
+    })
     await postImpl.postImpl()
     expect(runMock).toHaveReturned()
 
     expect(errorMock).not.toHaveBeenCalled()
     expect(saveCache).toHaveBeenCalled()
+    expect(restoreCache).not.toHaveBeenCalled()
+  })
+
+  it('should not save cache with matched key', async () => {
+    getState.mockImplementation(name => {
+      switch (name) {
+        case State.CacheMatchedKey:
+          return 'some-matched-key'
+        default:
+          return ''
+      }
+    })
+    await postImpl.postImpl()
+    expect(runMock).toHaveReturned()
+
+    expect(errorMock).not.toHaveBeenCalled()
+    expect(saveCache).not.toHaveBeenCalled()
     expect(restoreCache).not.toHaveBeenCalled()
   })
 })

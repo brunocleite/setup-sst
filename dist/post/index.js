@@ -61555,6 +61555,26 @@ exports["default"] = _default;
 
 /***/ }),
 
+/***/ 5431:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.State = void 0;
+var State;
+(function (State) {
+    State["SstFolder"] = "SST_FOLDER";
+    State["HomeFolder"] = "HOME_FOLDER";
+    State["PlatformOnly"] = "PLATFORM_ONLY";
+    State["CacheKey"] = "CACHE_KEY";
+    State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
+    State["CachePaths"] = "CACHE_PATHS";
+})(State || (exports.State = State = {}));
+
+
+/***/ }),
+
 /***/ 2451:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -61588,21 +61608,19 @@ exports.postImpl = postImpl;
 exports.postRun = postRun;
 const core = __importStar(__nccwpck_require__(2186));
 const cache = __importStar(__nccwpck_require__(7799));
-const sst_1 = __nccwpck_require__(9225);
+const contants_1 = __nccwpck_require__(5431);
 /**
  * The post function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function postImpl() {
     try {
-        const cacheWasRestored = core.getState('cacheRestored');
-        if (cacheWasRestored)
+        const cacheMatchedKey = core.getState(contants_1.State.CacheMatchedKey);
+        if (cacheMatchedKey && cacheMatchedKey.length > 0)
             return;
-        const sstFolder = core.getState('sstFolder');
-        const homeFolder = core.getState('homeFolder');
-        const sstPaths = (0, sst_1.sstCachePaths)(sstFolder, homeFolder);
-        const cacheKey = core.getState('cacheKey');
-        await cache.saveCache(sstPaths, cacheKey);
+        const cacheKey = core.getState(contants_1.State.CacheKey);
+        const cachePaths = JSON.parse(core.getState(contants_1.State.CachePaths) || '[]');
+        await cache.saveCache(cachePaths, cacheKey);
     }
     catch (error) {
         if (error instanceof Error)
@@ -61621,29 +61639,6 @@ async function postRun(earlyExit) {
     if (earlyExit)
         process.exit(0);
 }
-
-
-/***/ }),
-
-/***/ 9225:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.sstCachePaths = void 0;
-const path_1 = __importDefault(__nccwpck_require__(1017));
-const sstCachePaths = (sstFolder, homeFolder) => {
-    return [
-        path_1.default.resolve(sstFolder, '.sst/platform'),
-        path_1.default.resolve(homeFolder, '.config/sst/plugins'),
-        path_1.default.resolve(homeFolder, '.config/sst/bin')
-    ];
-};
-exports.sstCachePaths = sstCachePaths;
 
 
 /***/ }),
