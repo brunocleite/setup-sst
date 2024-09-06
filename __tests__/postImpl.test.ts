@@ -35,6 +35,8 @@ describe('post action', () => {
       switch (name) {
         case State.CacheMatchedKey:
           return ''
+        case State.CachePaths:
+          return '["folder1", "folder2"]'
         default:
           return ''
       }
@@ -52,6 +54,25 @@ describe('post action', () => {
       switch (name) {
         case State.CacheMatchedKey:
           return 'some-matched-key'
+        default:
+          return ''
+      }
+    })
+    await postImpl.postImpl()
+    expect(runMock).toHaveReturned()
+
+    expect(errorMock).not.toHaveBeenCalled()
+    expect(saveCache).not.toHaveBeenCalled()
+    expect(restoreCache).not.toHaveBeenCalled()
+  })
+
+  it('should skip save cache with empty paths', async () => {
+    getState.mockImplementation(name => {
+      switch (name) {
+        case State.CacheMatchedKey:
+          return ''
+        case State.CachePaths:
+          return ''
         default:
           return ''
       }

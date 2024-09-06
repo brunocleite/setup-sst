@@ -34,7 +34,7 @@ jobs:
 
       - name: Install SST Dependencies
         id: sst-npm
-        run: | 
+        run: |
           cd sst
           npm ci
 
