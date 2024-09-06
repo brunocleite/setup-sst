@@ -32,6 +32,12 @@ jobs:
         id: npm-ci
         run: npm ci
 
+      - name: Install SST Dependencies
+        id: sst-npm
+        run: | 
+          cd sst
+          npm ci
+
       - name: Check Format
         id: npm-format-check
         run: npm run format:check
