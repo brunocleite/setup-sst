@@ -86,7 +86,10 @@ describe('main action', () => {
 
     expect(errorMock).not.toHaveBeenCalled()
     expect(saveCache).not.toHaveBeenCalled()
-    expect(restoreCache).toHaveBeenCalledTimes(1)
+    expect(restoreCache).toHaveBeenCalled()
+
+    const firstCallArgs = restoreCache.mock.calls[0]
+    expect(firstCallArgs[1]).toMatch(/\b(?=.*-sst-)(?!.*-sst-platform-).*$/)
   }, 20000)
 
   it('with SST folder containing package-lock that has no SST dependency', async () => {

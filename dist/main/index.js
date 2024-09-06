@@ -64055,7 +64055,7 @@ async function mainImpl() {
     const binPath = path.resolve(homeFolder, '.config/sst/bin');
     // Caching
     const sstConfigHash = await glob.hashFiles(sstConfigPath);
-    const platformOnly = Boolean(core.getInput(contants_1.Input.PlatformOnly) || 'false');
+    const platformOnly = Boolean(core.getInput(contants_1.Input.PlatformOnly) || false);
     core.saveState(contants_1.State.PlatformOnly, platformOnly);
     let cacheKey;
     let cachePaths;

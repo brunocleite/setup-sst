@@ -56,7 +56,7 @@ export async function mainImpl(): Promise<void> {
 
   // Caching
   const sstConfigHash = await glob.hashFiles(sstConfigPath)
-  const platformOnly = Boolean(core.getInput(Input.PlatformOnly) || 'false')
+  const platformOnly = Boolean(core.getInput(Input.PlatformOnly) || false)
   core.saveState(State.PlatformOnly, platformOnly)
   let cacheKey
   let cachePaths
