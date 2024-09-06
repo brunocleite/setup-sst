@@ -75,4 +75,4 @@ jobs:
         id: test-action
         uses: ./
         with:
-          sst-folder: './sst'
+          sst-folder: 'sst'

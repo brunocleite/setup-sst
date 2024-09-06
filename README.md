@@ -33,7 +33,7 @@ Sample without defaults:
   id: setup-sst
   uses: brunocleite/setup-sst-v3@v1
   with:
-    sst-folder: './sst'
+    sst-folder: 'sst'
 ```
 
 ## Cached folders
