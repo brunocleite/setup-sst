@@ -12,6 +12,11 @@ inputs:
   sst-folder:
     description: 'SST folder location'
     default: './'
+  platform-only:
+    description:
+      "Only caches the SST platform files on '.sst/platform'. Useful for linting
+      runs that will not deploy."
+    default: 'false'
 
 runs:
   using: node20

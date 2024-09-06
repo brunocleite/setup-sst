@@ -11,17 +11,17 @@ installing the providers.
 
 It automatically caches the providers if SST version in `package-lock.json` and
 `sst.config.ts` files have not changed.  
-It is assuming that your providers are
-listed in `sst.config.ts` and not referenced to another file.
+It is assuming that your providers are listed in `sst.config.ts` and not
+referenced to another file.
 
 ## Inputs
 
 - **Optional**: `sst-folder` - the location of the SST folder.  
   Defaults to `./`
-- **Optional**: `platform-only` - only caches the platform. Useful for linting runs that will not deploy.
-  Defaults to `false`
-- 
-Sample with defaults:
+- **Optional**: `platform-only` - Only caches the SST platform files on
+  '.sst/platform'. Useful for linting runs that will not deploy. Defaults to
+  `false`
+- Sample with defaults:
 
 ```yaml
 - name: Setup SST
