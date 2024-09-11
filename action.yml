@@ -10,12 +10,14 @@ branding:
 # Define your inputs here.
 inputs:
   sst-folder:
-    description: 'SST folder location'
+    description:
+      'The SST folder path. `sst.config.ts` should be here. `package-lock.json`
+      should be here on a parent folder of it (in case of using npm workspaces).'
     default: './'
   platform-only:
     description:
-      "Only caches the SST platform files on '.sst/platform'. Useful for linting
-      runs that will not deploy."
+      "Only caches the SST platform files on '.sst/platform'. Useful for a
+      linting-only run that will not deploy."
     default: 'false'
 
 runs:
