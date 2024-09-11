@@ -18,7 +18,7 @@ referenced to another file.
 
 - **Optional**: `sst-folder` - the SST folder path. `sst.config.ts` should be
   here. `package-lock.json` should be here on a parent folder of it (in case of
-  using NPM workspaces).  
+  using npm workspaces).  
   Defaults to `./`
 - **Optional**: `platform-only` - Only caches the SST platform files on
   '.sst/platform'. Useful for linting runs that will not deploy. Defaults to
