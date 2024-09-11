@@ -61564,8 +61564,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Input = exports.State = void 0;
 var State;
 (function (State) {
-    State["SstFolder"] = "SST_FOLDER";
-    State["HomeFolder"] = "HOME_FOLDER";
     State["CacheKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";

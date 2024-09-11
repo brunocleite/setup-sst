@@ -12,18 +12,21 @@ import { Input, State } from './contants'
  */
 export async function mainImpl(): Promise<void> {
   // SST Folder
-  const sstFolder = core.getInput(Input.SstFolder) || './'
-  core.saveState(State.SstFolder, sstFolder)
-  const nodeModulesPath = path.resolve(sstFolder, 'node_modules')
-  core.info("'node_modules' path: " + nodeModulesPath)
-  if (!fs.existsSync(nodeModulesPath)) {
+  const sstFolder = path.resolve(core.getInput(Input.SstFolder) || './')
+  const nodeModulesPath = findFile('node_modules', sstFolder)
+  core.info('node_modules path: ' + nodeModulesPath)
+  if (!nodeModulesPath) {
     throw new Error(
       'node_modules folder not found, please run npm install first'
     )
   }
 
   // Basic files verification
-  const packageLockPath = path.resolve(sstFolder, 'package-lock.json')
+  const packageLockPath = path.resolve(
+    nodeModulesPath,
+    '..',
+    'package-lock.json'
+  )
   core.info(`'package-lock' path: ${packageLockPath}`)
   const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts')
   core.info(`'sst.config.ts' path: ${sstConfigPath}`)
@@ -47,7 +50,6 @@ export async function mainImpl(): Promise<void> {
   if (!homeFolder) {
     throw new Error('Failed to get HOME folder')
   }
-  core.saveState(State.HomeFolder, homeFolder)
 
   //Paths
   const platformPath = path.resolve(sstFolder, '.sst/platform')
@@ -78,6 +80,26 @@ export async function mainImpl(): Promise<void> {
   } else {
     core.info(`SST cache not found, installing SST...`)
     await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder })
+  }
+}
+
+function findFile(
+  fileName: string,
+  currentDir: string = __dirname
+): string | null {
+  const currentPath = path.join(currentDir, fileName)
+
+  if (fs.existsSync(currentPath)) {
+    return currentPath
+  } else {
+    const parentDir = path.dirname(currentDir)
+
+    if (parentDir === currentDir) {
+      // reached the root
+      return null
+    }
+
+    return findFile(fileName, parentDir)
   }
 }
 

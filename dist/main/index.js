@@ -63959,8 +63959,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Input = exports.State = void 0;
 var State;
 (function (State) {
-    State["SstFolder"] = "SST_FOLDER";
-    State["HomeFolder"] = "HOME_FOLDER";
     State["CacheKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";
@@ -64018,15 +64016,14 @@ const contants_1 = __nccwpck_require__(5431);
  */
 async function mainImpl() {
     // SST Folder
-    const sstFolder = core.getInput(contants_1.Input.SstFolder) || './';
-    core.saveState(contants_1.State.SstFolder, sstFolder);
-    const nodeModulesPath = path.resolve(sstFolder, 'node_modules');
-    core.info("'node_modules' path: " + nodeModulesPath);
-    if (!fs.existsSync(nodeModulesPath)) {
+    const sstFolder = path.resolve(core.getInput(contants_1.Input.SstFolder) || './');
+    const nodeModulesPath = findFile('node_modules', sstFolder);
+    core.info('node_modules path: ' + nodeModulesPath);
+    if (!nodeModulesPath) {
         throw new Error('node_modules folder not found, please run npm install first');
     }
     // Basic files verification
-    const packageLockPath = path.resolve(sstFolder, 'package-lock.json');
+    const packageLockPath = path.resolve(nodeModulesPath, '..', 'package-lock.json');
     core.info(`'package-lock' path: ${packageLockPath}`);
     const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
     core.info(`'sst.config.ts' path: ${sstConfigPath}`);
@@ -64047,7 +64044,6 @@ async function mainImpl() {
     if (!homeFolder) {
         throw new Error('Failed to get HOME folder');
     }
-    core.saveState(contants_1.State.HomeFolder, homeFolder);
     //Paths
     const platformPath = path.resolve(sstFolder, '.sst/platform');
     const pluginsPath = path.resolve(homeFolder, '.config/sst/plugins');
@@ -64077,6 +64073,20 @@ async function mainImpl() {
     else {
         core.info(`SST cache not found, installing SST...`);
         await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder });
+    }
+}
+function findFile(fileName, currentDir = __dirname) {
+    const currentPath = path.join(currentDir, fileName);
+    if (fs.existsSync(currentPath)) {
+        return currentPath;
+    }
+    else {
+        const parentDir = path.dirname(currentDir);
+        if (parentDir === currentDir) {
+            // reached the root
+            return null;
+        }
+        return findFile(fileName, parentDir);
     }
 }
 async function mainRun(earlyExit) {
