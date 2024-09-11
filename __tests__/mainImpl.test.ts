@@ -118,7 +118,7 @@ describe('main action', () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
         case Input.SstFolder:
-          return 'invalid_folder'
+          return '/invalid/invalid_folder'
         default:
           return ''
       }
