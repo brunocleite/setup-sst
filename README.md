@@ -16,10 +16,10 @@ referenced to another file.
 
 ## Inputs
 
-- **Optional**: `sst-folder` - the SST folder path. `sst.config.ts` should be
-  here. `package-lock.json` should be here on a parent folder of it (in case of
-  using npm workspaces).  
-  Defaults to `./`
+- **Optional**: `sst-path` - the SST configuration path path. `sst.config.ts`
+  should be here. Defaults to `./`
+- **Optional**: `package-json-path` - the `package.json` file location. Defaults
+  to `./`
 - **Optional**: `platform-only` - Only caches the SST platform files on
   '.sst/platform'. Useful for linting runs that will not deploy. Defaults to
   `false`
@@ -31,14 +31,16 @@ referenced to another file.
   uses: brunocleite/setup-sst-v3@v1
 ```
 
-Sample specifying a different SST folder other than root and platform-only:
+Sample specifying a different SST config and package other than root and
+platform-only:
 
 ```yaml
 - name: Setup SST
   id: setup-sst
   uses: brunocleite/setup-sst-v3@v1
   with:
-    sst-folder: 'sst'
+    sst-config: './sst'
+    package-json: './'
     platform-only: true
 ```
 

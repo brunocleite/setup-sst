@@ -69,4 +69,5 @@ jobs:
         id: test-action
         uses: ./
         with:
-          sst-folder: 'sst'
+          sst-path: 'sst'
+          package-json-path: 'sst'

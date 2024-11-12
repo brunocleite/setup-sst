@@ -12,8 +12,11 @@ import { Input, State } from './contants'
  */
 export async function mainImpl(): Promise<void> {
   // SST Folder
-  const sstFolder = path.resolve(core.getInput(Input.SstFolder) || './')
-  const nodeModulesPath = findFile('node_modules', sstFolder)
+  const sstFolder = path.resolve(core.getInput(Input.SstPath) || './')
+  const packageJsonPath = path.resolve(
+    core.getInput(Input.PackageJsonPath) || './'
+  )
+  const nodeModulesPath = findFile('node_modules', packageJsonPath)
   core.info('node_modules path: ' + nodeModulesPath)
   if (!nodeModulesPath) {
     throw new Error(

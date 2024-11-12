@@ -5,6 +5,7 @@ export enum State {
 }
 
 export enum Input {
-  SstFolder = 'sst-folder',
+  SstPath = 'sst-path',
+  PackageJsonPath = 'package-json-path',
   PlatformOnly = 'platform-only'
 }

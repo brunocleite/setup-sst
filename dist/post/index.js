@@ -61570,7 +61570,8 @@ var State;
 })(State || (exports.State = State = {}));
 var Input;
 (function (Input) {
-    Input["SstFolder"] = "sst-folder";
+    Input["SstPath"] = "sst-path";
+    Input["PackageJsonPath"] = "package-json-path";
     Input["PlatformOnly"] = "platform-only";
 })(Input || (exports.Input = Input = {}));
 

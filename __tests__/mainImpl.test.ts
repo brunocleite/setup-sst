@@ -34,7 +34,9 @@ describe('main action', () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case Input.SstFolder:
+        case Input.SstPath:
+          return './sst'
+        case Input.PackageJsonPath:
           return './sst'
         case Input.PlatformOnly:
           return 'false'
@@ -73,7 +75,9 @@ describe('main action', () => {
   it('with proper SST folder and cache miss', async () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case Input.SstFolder:
+        case Input.SstPath:
+          return './sst'
+        case Input.PackageJsonPath:
           return './sst'
         case Input.PlatformOnly:
           return 'false'
@@ -96,11 +100,13 @@ describe('main action', () => {
     expect(firstCallArgs[1]).toMatch(/\b(?=.*-sst-)(?!.*-sst-platform-).*$/)
   }, 20000)
 
-  it('with SST folder containing package-lock that has no SST dependency', async () => {
+  it('with Package Json folder containing package-lock that has no SST dependency', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case Input.SstFolder:
+        case Input.SstPath:
+          return './sst'
+        case Input.PackageJsonPath:
           return ''
         default:
           return ''
@@ -113,11 +119,11 @@ describe('main action', () => {
     expect(errorMock).not.toHaveBeenCalled()
   })
 
-  it('with SST folder containing no node_modules', async () => {
+  it('with package json folder containing no node_modules', async () => {
     // Set the action's inputs as return values from core.getInput()
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case Input.SstFolder:
+        case Input.PackageJsonPath:
           return '/invalid/invalid_folder'
         default:
           return ''

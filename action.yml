@@ -9,10 +9,11 @@ branding:
 
 # Define your inputs here.
 inputs:
-  sst-folder:
-    description:
-      'The SST folder path. `sst.config.ts` should be here. `package-lock.json`
-      should be here on a parent folder of it (in case of using npm workspaces).'
+  sst-path:
+    description: 'The SST folder path. `sst.config.ts` should be here.'
+    default: './'
+  package-json-path:
+    description: "the 'package.json' file location."
     default: './'
   platform-only:
     description:
