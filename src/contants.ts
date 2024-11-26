@@ -6,6 +6,6 @@ export enum State {
 
 export enum Input {
   SstPath = 'sst-path',
-  PackageJsonPath = 'package-json-path',
+  LockfilePath = 'lockfile-path',
   PlatformOnly = 'platform-only'
 }

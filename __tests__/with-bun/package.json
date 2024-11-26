@@ -1,0 +1,7 @@
+{
+  "name": "test-sst-app-bun",
+  "version": "0.0.1",
+  "dependencies": {
+    "sst": "^3.0.107"
+  }
+}
