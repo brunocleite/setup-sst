@@ -14,6 +14,7 @@ ignorePatterns:
   - '**/coverage/.*'
   - '*.json'
   - '**/sst/.*'
+  - '__test_environments__'
   - 'dist'
   - 'coverage'
 
@@ -24,7 +25,6 @@ parserOptions:
   sourceType: module
   project:
     - './.github/linters/tsconfig.json'
-    - './sst/tsconfig.json'
     - './tsconfig.json'
 
 plugins:

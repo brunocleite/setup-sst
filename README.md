@@ -9,8 +9,8 @@
 This GitHub Action will prepare your [SST](https://sst.dev) v3 application by
 installing the providers.
 
-It automatically caches the providers if SST version in `package-lock.json` and
-`sst.config.ts` files have not changed.  
+It automatically caches the providers if SST version in lockfile (supports NPM
+and Bun) and `sst.config.ts` files have not changed.  
 It is assuming that your providers are listed in `sst.config.ts` and not
 referenced to another file.
 
@@ -18,8 +18,8 @@ referenced to another file.
 
 - **Optional**: `sst-path` - the SST configuration path path. `sst.config.ts`
   should be here. Defaults to `./`
-- **Optional**: `package-json-path` - the `package.json` file location. Defaults
-  to `./`
+- **Optional**: `lockfile-path` - the `package-lock.json` or `bun.lockb` file
+  location. Defaults to `./package-lock.json`
 - **Optional**: `platform-only` - Only caches the SST platform files on
   '.sst/platform'. Useful for linting runs that will not deploy. Defaults to
   `false`
@@ -39,8 +39,8 @@ platform-only:
   id: setup-sst
   uses: brunocleite/setup-sst-v3@v1
   with:
-    sst-config: './sst'
-    package-json: './'
+    sst-path: './sst'
+    lockfile-path: './sst/bun.lockb'
     platform-only: true
 ```
 

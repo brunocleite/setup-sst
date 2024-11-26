@@ -1,4 +1,4 @@
 dist/
 node_modules/
 coverage/
-sst/
+__test_environments__/

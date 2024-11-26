@@ -15,5 +15,10 @@
     "skipLibCheck": true,
     "newLine": "lf"
   },
-  "exclude": ["./dist", "./node_modules", "./__tests__", "./coverage", "./sst"]
+  "exclude": [
+    "./dist",
+    "./node_modules",
+    "./__test_environments__",
+    "./coverage"
+  ]
 }

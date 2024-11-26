@@ -13,7 +13,8 @@ inputs:
     description: 'The SST folder path. `sst.config.ts` should be here.'
     default: './'
   lockfile-path:
-    description: "the 'lockfile' file location. Defaults to './package-lock.json'"
+    description:
+      "the 'lockfile' file location. Defaults to './package-lock.json'"
     default: './package-lock.json'
   platform-only:
     description:

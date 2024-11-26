@@ -10,6 +10,6 @@
     "../../node_modules",
     "../../coverage",
     "*.json",
-    "../../sst"
+    "../../__test_environments__"
   ]
 }
