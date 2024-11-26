@@ -9,7 +9,7 @@
 This GitHub Action will prepare your [SST](https://sst.dev) v3 application by
 installing the providers.
 
-It automatically caches the providers if SST version in lockfile (supports NPM
+It automatically caches the providers if SST version in lockfile (supports npm
 and Bun) and `sst.config.ts` files have not changed.  
 It is assuming that your providers are listed in `sst.config.ts` and not
 referenced to another file.

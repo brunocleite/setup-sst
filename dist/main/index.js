@@ -63966,7 +63966,7 @@ var State;
 var Input;
 (function (Input) {
     Input["SstPath"] = "sst-path";
-    Input["PackageJsonPath"] = "package-json-path";
+    Input["LockfilePath"] = "lockfile-path";
     Input["PlatformOnly"] = "platform-only";
 })(Input || (exports.Input = Input = {}));
 
@@ -64018,29 +64018,39 @@ const contants_1 = __nccwpck_require__(5431);
 async function mainImpl() {
     // SST Folder
     const sstFolder = path.resolve(core.getInput(contants_1.Input.SstPath) || './');
-    const packageJsonPath = path.resolve(core.getInput(contants_1.Input.PackageJsonPath) || './');
-    const nodeModulesPath = findFile('node_modules', packageJsonPath);
+    const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
+    core.info(`'sst.config.ts' path: ${sstConfigPath}`);
+    const lockfilePath = path.resolve(core.getInput(contants_1.Input.LockfilePath) || './package-lock.json');
+    const lockFileFolder = path.dirname(lockfilePath);
+    const nodeModulesPath = findFile('node_modules', lockFileFolder);
     core.info('node_modules path: ' + nodeModulesPath);
     if (!nodeModulesPath) {
         throw new Error('node_modules folder not found, please run npm install first');
     }
-    // Basic files verification
-    const packageLockPath = path.resolve(nodeModulesPath, '..', 'package-lock.json');
-    core.info(`'package-lock' path: ${packageLockPath}`);
-    const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts');
-    core.info(`'sst.config.ts' path: ${sstConfigPath}`);
-    const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf-8'));
-    // SST dependency present
-    const nodeModulesSst = packageLock?.packages['node_modules/sst'];
-    if (!nodeModulesSst) {
-        throw new Error('SST module is not on package-lock.json, install it first');
+    // Lockfile verification
+    let sstVersion;
+    if (lockfilePath.endsWith('package-lock.json')) {
+        //NPM lockfile
+        // SST dependency present
+        const packageLock = JSON.parse(fs.readFileSync(lockfilePath, 'utf-8'));
+        const nodeModulesSst = packageLock?.packages['node_modules/sst'];
+        if (!nodeModulesSst) {
+            throw new Error('SST module is not on package-lock.json, install it first');
+        }
+        // SST version
+        sstVersion = nodeModulesSst.version;
+        if (!sstVersion) {
+            throw new Error('SST version could not be parsed');
+        }
+        core.info(`SST version v${sstVersion} found`);
     }
-    // SST version
-    const sstVersion = nodeModulesSst.version;
-    if (!sstVersion) {
-        throw new Error('SST version could not be parsed');
+    else if (lockfilePath.endsWith('bun.lockb')) {
+        //Use the full 'bun.lockb' as the sst version, can't parse as it is binary
+        sstVersion = await glob.hashFiles(lockfilePath);
     }
-    core.info(`SST version v${sstVersion} found`);
+    else {
+        throw new Error('Unsupported lockfile format');
+    }
     // Home folder
     const homeFolder = process.env.HOME;
     if (!homeFolder) {

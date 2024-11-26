@@ -61571,7 +61571,7 @@ var State;
 var Input;
 (function (Input) {
     Input["SstPath"] = "sst-path";
-    Input["PackageJsonPath"] = "package-json-path";
+    Input["LockfilePath"] = "lockfile-path";
     Input["PlatformOnly"] = "platform-only";
 })(Input || (exports.Input = Input = {}));
 

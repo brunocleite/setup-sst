@@ -19,6 +19,7 @@
     "./dist",
     "./node_modules",
     "./__test_environments__",
+    "./__tests__",
     "./coverage"
   ]
 }
