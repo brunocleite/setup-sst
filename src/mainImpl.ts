@@ -30,7 +30,9 @@ export async function mainImpl(): Promise<void> {
 
   // Lockfile verification
   let sstVersion
+  let packageManagerRunCommand
   if (lockfilePath.endsWith('package-lock.json')) {
+    packageManagerRunCommand = 'npx'
     //NPM lockfile
     // SST dependency present
     const packageLock = JSON.parse(fs.readFileSync(lockfilePath, 'utf-8'))
@@ -47,6 +49,7 @@ export async function mainImpl(): Promise<void> {
     }
     core.info(`SST version v${sstVersion} found`)
   } else if (lockfilePath.endsWith('bun.lockb')) {
+    packageManagerRunCommand = 'bunx'
     //Use the full 'bun.lockb' as the sst version, can't parse as it is binary
     sstVersion = await glob.hashFiles(lockfilePath)
   } else {
@@ -87,7 +90,9 @@ export async function mainImpl(): Promise<void> {
     core.saveState(State.CacheMatchedKey, cacheMatchedKey)
   } else {
     core.info(`SST cache not found, installing SST...`)
-    await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder })
+    await exec.exec(packageManagerRunCommand, ['sst', 'install'], {
+      cwd: sstFolder
+    })
   }
 }
 
