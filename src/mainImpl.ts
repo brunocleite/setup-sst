@@ -90,9 +90,15 @@ export async function mainImpl(): Promise<void> {
     core.saveState(State.CacheMatchedKey, cacheMatchedKey)
   } else {
     core.info(`SST cache not found, installing SST...`)
-    await exec.exec(packageManagerRunCommand, ['sst', 'install'], {
-      cwd: sstFolder
-    })
+    const printLogs =
+      core.getInput(Input.Debug) === 'true' ? ['--print-logs'] : []
+    await exec.exec(
+      packageManagerRunCommand,
+      ['sst', 'install', ...printLogs],
+      {
+        cwd: sstFolder
+      }
+    )
   }
 }
 

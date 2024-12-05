@@ -21,6 +21,9 @@ inputs:
       "Only caches the SST platform files on '.sst/platform'. Useful for a
       linting-only run that will not deploy."
     default: 'false'
+  debug:
+    description: 'Prints SST installation logs to the console'
+    default: 'false'
 
 runs:
   using: node20

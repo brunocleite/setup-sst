@@ -8,5 +8,6 @@ export enum State {
 export enum Input {
   SstPath = 'sst-path',
   LockfilePath = 'lockfile-path',
-  PlatformOnly = 'platform-only'
+  PlatformOnly = 'platform-only',
+  Debug = 'debug'
 }

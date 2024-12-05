@@ -61574,6 +61574,7 @@ var Input;
     Input["SstPath"] = "sst-path";
     Input["LockfilePath"] = "lockfile-path";
     Input["PlatformOnly"] = "platform-only";
+    Input["Debug"] = "debug";
 })(Input || (exports.Input = Input = {}));
 
 

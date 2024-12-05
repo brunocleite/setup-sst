@@ -23,6 +23,9 @@ referenced to another file.
 - **Optional**: `platform-only` - Only caches the SST platform files on
   '.sst/platform'. Useful for linting runs that will not deploy. Defaults to
   `false`
+- **Optional**: `debug` - Prints SST installation logs to the console. Defaults
+  to `false`
+
 - Sample with defaults:
 
 ```yaml

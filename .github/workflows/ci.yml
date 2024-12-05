@@ -69,5 +69,7 @@ jobs:
         id: test-action
         uses: ./
         with:
+          # noinspection UndefinedParamsPresent
           sst-path: './__test_environments__/with-npm'
+          # noinspection UndefinedParamsPresent
           lockfile-path: './__test_environments__/with-npm/package-lock.json'

@@ -63969,6 +63969,7 @@ var Input;
     Input["SstPath"] = "sst-path";
     Input["LockfilePath"] = "lockfile-path";
     Input["PlatformOnly"] = "platform-only";
+    Input["Debug"] = "debug";
 })(Input || (exports.Input = Input = {}));
 
 
@@ -64088,7 +64089,8 @@ async function mainImpl() {
     }
     else {
         core.info(`SST cache not found, installing SST...`);
-        await exec.exec(packageManagerRunCommand, ['sst', 'install'], {
+        const printLogs = core.getInput(contants_1.Input.Debug) === 'true' ? ['--print-logs'] : [];
+        await exec.exec(packageManagerRunCommand, ['sst', 'install', ...printLogs], {
             cwd: sstFolder
         });
     }
