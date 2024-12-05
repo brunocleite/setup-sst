@@ -35,7 +35,7 @@ jobs:
       - name: Install SST Dependencies
         id: sst-npm
         run: |
-          cd sst
+          cd __test_environments__/with-npm
           npm ci
 
       - name: Check Format
@@ -62,7 +62,7 @@ jobs:
       - name: Npm install on SST folder
         id: npm-sst
         run: |
-          cd sst
+          cd __test_environments__/with-npm
           npm ci
 
       - name: Test Local Action
