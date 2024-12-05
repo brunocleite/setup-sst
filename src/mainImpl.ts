@@ -120,6 +120,7 @@ export async function mainRun(earlyExit?: boolean | undefined): Promise<void> {
   try {
     await mainImpl()
   } catch (error) {
+    core.saveState(State.Failed, 'true')
     if (error instanceof Error) core.setFailed(error.message)
     if (earlyExit) process.exit(1)
     throw error

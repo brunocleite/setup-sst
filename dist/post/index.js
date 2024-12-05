@@ -61567,6 +61567,7 @@ var State;
     State["CacheKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";
+    State["Failed"] = "FAILED";
 })(State || (exports.State = State = {}));
 var Input;
 (function (Input) {
@@ -61617,8 +61618,9 @@ const contants_1 = __nccwpck_require__(5431);
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function postImpl() {
+    const failed = core.getState(contants_1.State.Failed);
     const cacheMatchedKey = core.getState(contants_1.State.CacheMatchedKey);
-    if (cacheMatchedKey && cacheMatchedKey.length > 0)
+    if (failed || (cacheMatchedKey && cacheMatchedKey.length > 0))
         return;
     const cacheKey = core.getState(contants_1.State.CacheKey);
     const cachePaths = JSON.parse(core.getState(contants_1.State.CachePaths) || '[]');

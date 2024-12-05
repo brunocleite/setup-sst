@@ -7,8 +7,9 @@ import { State } from './contants'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function postImpl(): Promise<void> {
+  const failed = core.getState(State.Failed)
   const cacheMatchedKey = core.getState(State.CacheMatchedKey)
-  if (cacheMatchedKey && cacheMatchedKey.length > 0) return
+  if (failed || (cacheMatchedKey && cacheMatchedKey.length > 0)) return
 
   const cacheKey = core.getState(State.CacheKey)
   const cachePaths = JSON.parse(core.getState(State.CachePaths) || '[]')

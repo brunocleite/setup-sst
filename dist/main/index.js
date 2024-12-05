@@ -63962,6 +63962,7 @@ var State;
     State["CacheKey"] = "CACHE_KEY";
     State["CacheMatchedKey"] = "CACHE_MATCHED_KEY";
     State["CachePaths"] = "CACHE_PATHS";
+    State["Failed"] = "FAILED";
 })(State || (exports.State = State = {}));
 var Input;
 (function (Input) {
@@ -64029,7 +64030,9 @@ async function mainImpl() {
     }
     // Lockfile verification
     let sstVersion;
+    let packageManagerRunCommand;
     if (lockfilePath.endsWith('package-lock.json')) {
+        packageManagerRunCommand = 'npx';
         //NPM lockfile
         // SST dependency present
         const packageLock = JSON.parse(fs.readFileSync(lockfilePath, 'utf-8'));
@@ -64045,6 +64048,7 @@ async function mainImpl() {
         core.info(`SST version v${sstVersion} found`);
     }
     else if (lockfilePath.endsWith('bun.lockb')) {
+        packageManagerRunCommand = 'bunx';
         //Use the full 'bun.lockb' as the sst version, can't parse as it is binary
         sstVersion = await glob.hashFiles(lockfilePath);
     }
@@ -64084,7 +64088,9 @@ async function mainImpl() {
     }
     else {
         core.info(`SST cache not found, installing SST...`);
-        await exec.exec(`npx`, ['sst', 'install'], { cwd: sstFolder });
+        await exec.exec(packageManagerRunCommand, ['sst', 'install'], {
+            cwd: sstFolder
+        });
     }
 }
 function findFile(fileName, currentDir = __dirname) {
@@ -64106,6 +64112,7 @@ async function mainRun(earlyExit) {
         await mainImpl();
     }
     catch (error) {
+        core.saveState(contants_1.State.Failed, 'true');
         if (error instanceof Error)
             core.setFailed(error.message);
         if (earlyExit)
