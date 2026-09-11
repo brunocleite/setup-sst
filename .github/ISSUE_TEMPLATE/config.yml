@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or usage help
+    url: https://github.com/brunocleite/setup-sst/discussions
+    about: Ask a question about using the action.
+  - name: SST itself (not this action)
+    url: https://github.com/sst/sst/issues
+    about: For bugs in SST, deployments, or providers, report them upstream.

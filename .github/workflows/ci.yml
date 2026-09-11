@@ -2,74 +2,233 @@ name: Continuous Integration
 
 on:
   pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-typescript:
-    name: TypeScript Tests
+  test:
+    name: Lint, type-check and test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        id: setup-node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
           cache: npm
 
-      - name: Install Dependencies
-        id: npm-ci
-        run: npm ci
+      - run: npm ci
 
-      - name: Install SST Dependencies
-        id: sst-npm
-        run: |
-          cd __test_environments__/with-npm
-          npm ci
+      - name: Install test fixtures
+        run: npm run test:fixtures
 
-      - name: Check Format
-        id: npm-format-check
+      - name: Check formatting
         run: npm run format:check
 
       - name: Lint
-        id: npm-lint
         run: npm run lint
 
+      - name: Type-check
+        run: npx tsc --noEmit -p tsconfig.test.json
+
       - name: Test
-        id: npm-ci-test
         run: npm run ci-test
 
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
   test-action:
-    name: GitHub Actions Test
+    name: Run action (${{ matrix.package-manager }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        package-manager: [npm]
+        include:
+          - os: ubuntu-latest
+            package-manager: bun
+          - os: ubuntu-latest
+            package-manager: pnpm
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Set up Bun
+        if: matrix.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up pnpm
+        if: matrix.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install SST in the fixture app
+        working-directory: __test_environments__/with-npm
+        run: npm ci
+
+      - name: Run the action
+        id: setup-sst
+        uses: ./
+        with:
+          sst-path: './__test_environments__/with-npm'
+          cache-key-suffix: ci-${{ matrix.os }}-${{ matrix.package-manager }}
+
+      - name: Verify the action produced its outputs
+        shell: bash
+        run: |
+          echo "cache-hit:       ${{ steps.setup-sst.outputs.cache-hit }}"
+          echo "sst-version:     ${{ steps.setup-sst.outputs.sst-version }}"
+          echo "package-manager: ${{ steps.setup-sst.outputs.package-manager }}"
+
+          if [ -z "${{ steps.setup-sst.outputs.sst-version }}" ]; then
+            echo "::error::The action did not report an SST version."
+            exit 1
+          fi
+          if [ "${{ steps.setup-sst.outputs.package-manager }}" != "npm" ]; then
+            echo "::error::Expected the npm lockfile to be detected."
+            exit 1
+          fi
+
+      - name: Verify SST was actually installed
+        shell: bash
+        run: |
+          platform="__test_environments__/with-npm/.sst/platform"
+          if [ ! -d "$platform" ]; then
+            echo "::error::'$platform' is missing, so SST was never installed."
+            exit 1
+          fi
+          echo "Installed platform version: $(cat "$platform/version")"
+
+  test-cache-roundtrip:
+    name: Cache is restored on a second run
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Npm install on SST folder
-        id: npm-sst
-        run: |
-          cd __test_environments__/with-npm
-          npm ci
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
 
-      - name: Test Local Action
-        id: test-action
+      - name: Install SST in the fixture app
+        working-directory: __test_environments__/with-npm
+        run: npm ci
+
+      # `run_attempt` is part of the suffix so a re-run of this workflow gets a
+      # fresh key. Without it a re-run would restore the cache its first attempt
+      # saved, and the cache-miss assertion below would fail.
+      - name: Prime the cache
+        id: first
         uses: ./
         with:
-          # noinspection UndefinedParamsPresent
           sst-path: './__test_environments__/with-npm'
-          # noinspection UndefinedParamsPresent
-          lockfile-path: './__test_environments__/with-npm/package-lock.json'
+          cache-key-suffix:
+            roundtrip-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: The first run must be a cache miss
+        run: |
+          if [ "${{ steps.first.outputs.cache-hit }}" != "false" ]; then
+            echo "::error::Expected a cache miss on a fresh key."
+            exit 1
+          fi
+
+      - name: Verify SST was installed on the miss
+        run: |
+          platform="__test_environments__/with-npm/.sst/platform"
+          if [ ! -f "$platform/version" ]; then
+            echo "::error::Expected 'sst install' to run on a cache miss."
+            exit 1
+          fi
+          echo "Installed SST v$(cat "$platform/version")"
+
+  test-skip-install:
+    name: skip-install does not install on a miss
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Install SST in the fixture app
+        working-directory: __test_environments__/with-npm
+        run: npm ci
+
+      - name: Run against a key that cannot exist
+        id: skipped
+        uses: ./
+        with:
+          sst-path: './__test_environments__/with-npm'
+          cache-key-suffix:
+            never-exists-${{ github.run_id }}-${{ github.run_attempt }}
+          skip-install: true
+
+      - name: Verify SST was left uninstalled
+        run: |
+          if [ "${{ steps.skipped.outputs.cache-hit }}" != "false" ]; then
+            echo "::error::Expected a cache miss for a key that cannot exist."
+            exit 1
+          fi
+          if [ -d "__test_environments__/with-npm/.sst/platform" ]; then
+            echo "::error::skip-install still installed SST."
+            exit 1
+          fi
+
+  test-cache-restore:
+    name: Cache restores without reinstalling
+    runs-on: ubuntu-latest
+    needs: test-cache-roundtrip
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Install SST in the fixture app
+        working-directory: __test_environments__/with-npm
+        run: npm ci
+
+      # `test-cache-roundtrip` saved this exact key in its post step, so this
+      # job — which starts only after that one finished — must hit it.
+      - name: Restore the cache primed by the previous job
+        id: restore
+        uses: ./
+        with:
+          sst-path: './__test_environments__/with-npm'
+          cache-key-suffix:
+            roundtrip-${{ github.run_id }}-${{ github.run_attempt }}
+          skip-install: true
+
+      - name: Verify the cache was restored
+        run: |
+          if [ "${{ steps.restore.outputs.cache-hit }}" != "true" ]; then
+            echo "::error::Expected to restore the cache primed by the previous job."
+            exit 1
+          fi
+
+          platform="__test_environments__/with-npm/.sst/platform"
+          if [ ! -f "$platform/version" ]; then
+            echo "::error::Cache reported a hit but '$platform' was not restored."
+            exit 1
+          fi
+
+          echo "Restored SST v$(cat "$platform/version") from cache without installing."

@@ -4,152 +4,185 @@ import * as cache from '@actions/cache'
 import * as glob from '@actions/glob'
 import * as fs from 'fs'
 import * as path from 'path'
-import { Input, State } from './contants'
+import { Input, Output, State } from './constants'
+import { findLockfile, readLockfile } from './lockfile'
+import { buildCacheKey, platformPath, sstCachePaths } from './paths'
 
 /**
- * The main function for the action.
- * @returns {Promise<void>} Resolves when the action is complete.
+ * Restores the SST provider cache, installing the providers when it misses.
+ *
+ * @returns Resolves when the action is complete.
  */
 export async function mainImpl(): Promise<void> {
-  // SST Folder
   const sstFolder = path.resolve(core.getInput(Input.SstPath) || './')
-  const sstConfigPath = path.resolve(sstFolder, 'sst.config.ts')
-  core.info(`'sst.config.ts' path: ${sstConfigPath}`)
-  const lockfilePath = path.resolve(
-    core.getInput(Input.LockfilePath) || './package-lock.json'
+  const sstConfigPath = path.join(sstFolder, 'sst.config.ts')
+
+  if (!fs.existsSync(sstConfigPath)) {
+    throw new Error(
+      `No 'sst.config.ts' found at '${sstConfigPath}'. Set the 'sst-path' input to the folder containing your SST config.`
+    )
+  }
+  core.info(`Using SST config: ${sstConfigPath}`)
+
+  const lockfilePath = resolveLockfilePath(sstFolder)
+  core.info(`Using lockfile: ${lockfilePath}`)
+
+  const { packageManager, runCommand, sstVersion, isHash } = await readLockfile(
+    lockfilePath,
+    file => glob.hashFiles(file)
+  )
+  core.info(
+    isHash
+      ? `Detected ${packageManager} (binary lockfile; using its hash to key the cache)`
+      : `Detected ${packageManager} with SST v${sstVersion}`
   )
 
-  const lockFileFolder = path.dirname(lockfilePath)
-  const nodeModulesPath = findFile('node_modules', lockFileFolder)
-  core.info('node_modules path: ' + nodeModulesPath)
-  if (!nodeModulesPath) {
+  const homeFolder = process.env.HOME ?? process.env.USERPROFILE
+  if (!homeFolder) {
     throw new Error(
-      'node_modules folder not found, please run npm install first'
+      'Could not determine the home directory (neither HOME nor USERPROFILE is set).'
     )
   }
 
-  // Lockfile verification
-  let sstVersion
-  let packageManagerRunCommand
-  if (lockfilePath.endsWith('package-lock.json')) {
-    packageManagerRunCommand = 'npx'
-    //NPM lockfile
-    // SST dependency present
-    const packageLock = JSON.parse(fs.readFileSync(lockfilePath, 'utf-8'))
-    const nodeModulesSst = packageLock?.packages['node_modules/sst']
-    if (!nodeModulesSst) {
-      throw new Error(
-        'SST module is not on package-lock.json, install it first'
-      )
-    }
-    // SST version
-    sstVersion = nodeModulesSst.version
-    if (!sstVersion) {
-      throw new Error('SST version could not be parsed')
-    }
-    core.info(`SST version v${sstVersion} found`)
-  } else if (lockfilePath.endsWith('bun.lockb')) {
-    packageManagerRunCommand = 'bunx'
-    //Use the full 'bun.lockb' as the sst version, can't parse as it is binary
-    sstVersion = await glob.hashFiles(lockfilePath)
-  } else {
-    throw new Error('Unsupported lockfile format')
-  }
+  const platformOnly = parseBooleanInput(Input.PlatformOnly)
+  const cachePaths = platformOnly
+    ? [platformPath(sstFolder)]
+    : sstCachePaths(sstFolder, homeFolder)
 
-  // Home folder
-  const homeFolder = process.env.HOME
-  if (!homeFolder) {
-    throw new Error('Failed to get HOME folder')
-  }
+  const cacheKey = buildCacheKey({
+    runnerOs: process.env.RUNNER_OS ?? process.platform,
+    sstVersion,
+    configHash: await glob.hashFiles(sstConfigPath),
+    platformOnly,
+    suffix: core.getInput(Input.CacheKeySuffix) || undefined
+  })
 
-  //Paths
-  const platformPath = path.resolve(sstFolder, '.sst/platform')
-  const pluginsPath = path.resolve(homeFolder, '.config/sst/plugins')
-  const binPath = path.resolve(homeFolder, '.config/sst/bin')
-
-  // Caching
-  const sstConfigHash = await glob.hashFiles(sstConfigPath)
-  const platformOnly = strictParseBoolean(core.getInput(Input.PlatformOnly))
-  let cacheKey
-  let cachePaths
-  if (platformOnly) {
-    cachePaths = [platformPath]
-    cacheKey = `${process.env.RUNNER_OS}-sst-platform-${sstVersion}-${sstConfigHash}`
-  } else {
-    cachePaths = [platformPath, pluginsPath, binPath]
-    cacheKey = `${process.env.RUNNER_OS}-sst-${sstVersion}-${sstConfigHash}`
-  }
   core.saveState(State.CacheKey, cacheKey)
   core.saveState(State.CachePaths, cachePaths)
-  core.info(`SST cache paths: ${cachePaths.join(', ')}`)
+  core.setOutput(Output.CacheKey, cacheKey)
+  core.setOutput(Output.SstVersion, sstVersion)
+  core.setOutput(Output.PackageManager, packageManager)
+  core.info(`Cache key: ${cacheKey}`)
+  core.info(`Cache paths:\n  ${cachePaths.join('\n  ')}`)
 
-  // Restore cache
-  const cacheMatchedKey = await cache.restoreCache(cachePaths, cacheKey)
-  if (cacheMatchedKey) {
-    core.info(`SST cache key: ${cacheMatchedKey}`)
-    core.saveState(State.CacheMatchedKey, cacheMatchedKey)
-  } else {
-    core.info(`SST cache not found, installing SST...`)
-    const printLogs =
-      core.getInput(Input.Debug) === 'true' ? ['--print-logs'] : []
-    await exec.exec(
-      packageManagerRunCommand,
-      ['sst', 'install', ...printLogs],
-      {
-        cwd: sstFolder
-      }
+  const matchedKey = await cache.restoreCache(cachePaths, cacheKey)
+  core.setOutput(Output.CacheHit, Boolean(matchedKey))
+
+  if (matchedKey) {
+    core.info(`Cache restored from key: ${matchedKey}`)
+    core.saveState(State.CacheMatchedKey, matchedKey)
+    return
+  }
+
+  if (parseBooleanInput(Input.SkipInstall)) {
+    core.info('Cache miss. Skipping install because `skip-install` is enabled.')
+    return
+  }
+
+  // Without a local install, `npx sst` silently downloads the latest SST from
+  // the registry — which may be a different major than the lockfile names. The
+  // cache would then be keyed on the lockfile version but hold the wrong
+  // providers, so refuse to continue rather than poison it.
+  assertSstInstalledLocally(lockfilePath, sstVersion)
+
+  core.info('Cache miss. Installing SST providers...')
+  const args = ['sst', 'install']
+  if (parseBooleanInput(Input.Debug)) args.push('--print-logs')
+
+  const exitCode = await exec.exec(runCommand, args, {
+    cwd: sstFolder,
+    ignoreReturnCode: true
+  })
+
+  if (exitCode !== 0) {
+    throw new Error(
+      `'${runCommand} sst install' failed with exit code ${exitCode}. Re-run with the 'debug: true' input for the full SST log.`
     )
   }
+  core.info('SST providers installed.')
 }
 
-function findFile(
-  fileName: string,
-  currentDir: string = __dirname
-): string | null {
-  const currentPath = path.join(currentDir, fileName)
+/**
+ * Verifies SST is installed in a `node_modules` reachable from the lockfile.
+ *
+ * @param lockfilePath Absolute path to the lockfile.
+ * @param expectedVersion The SST version named by the lockfile.
+ */
+function assertSstInstalledLocally(
+  lockfilePath: string,
+  expectedVersion: string
+): void {
+  let directory = path.dirname(lockfilePath)
 
-  if (fs.existsSync(currentPath)) {
-    return currentPath
-  } else {
-    const parentDir = path.dirname(currentDir)
+  for (;;) {
+    if (fs.existsSync(path.join(directory, 'node_modules', 'sst'))) return
 
-    if (parentDir === currentDir) {
-      // reached the root
-      return null
-    }
-
-    return findFile(fileName, parentDir)
+    const parent = path.dirname(directory)
+    if (parent === directory) break
+    directory = parent
   }
+
+  throw new Error(
+    `SST is not installed in node_modules, so 'sst install' would fetch the latest version from the registry instead of the v${expectedVersion} named by your lockfile. Run your package manager's install step before this action.`
+  )
 }
 
-export async function mainRun(earlyExit?: boolean | undefined): Promise<void> {
+/**
+ * Resolves the lockfile to read, using the `lockfile-path` input when given
+ * and otherwise searching the SST folder and then the repository root.
+ *
+ * @param sstFolder Absolute path to the folder holding `sst.config.ts`.
+ * @returns The absolute path to the lockfile.
+ */
+function resolveLockfilePath(sstFolder: string): string {
+  const configured = core.getInput(Input.LockfilePath)
+  if (configured) return path.resolve(configured)
+
+  const workspaceRoot = process.env.GITHUB_WORKSPACE ?? process.cwd()
+  for (const directory of [sstFolder, path.resolve(workspaceRoot)]) {
+    const found = findLockfile(directory)
+    if (found) return found
+  }
+
+  throw new Error(
+    `No lockfile found in '${sstFolder}' or the workspace root. Run your package manager's install step first, or set the 'lockfile-path' input.`
+  )
+}
+
+/**
+ * Reads a boolean input, accepting the values GitHub's own actions accept.
+ *
+ * @param name The input name.
+ * @returns The parsed value; false when the input is unset.
+ */
+function parseBooleanInput(name: Input): boolean {
+  const value = core.getInput(name)
+  if (!value) return false
+
+  const normalized = value.toLowerCase().trim()
+  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true
+  if (['false', '0', 'no', 'n', 'off', ''].includes(normalized)) return false
+
+  throw new Error(
+    `Invalid value for the '${name}' input: '${value}'. Use 'true' or 'false'.`
+  )
+}
+
+/**
+ * Entry point wrapper that reports failures to the Actions runner.
+ *
+ * @param earlyExit When true, exits the process once finished. Used by the
+ *   bundled entry point so the action does not hang on open handles.
+ * @returns Resolves when the action is complete.
+ */
+export async function mainRun(earlyExit?: boolean): Promise<void> {
   try {
     await mainImpl()
   } catch (error) {
     core.saveState(State.Failed, 'true')
-    if (error instanceof Error) core.setFailed(error.message)
+    core.setFailed(error instanceof Error ? error.message : String(error))
     if (earlyExit) process.exit(1)
-    throw error
+    return
   }
   if (earlyExit) process.exit(0)
-}
-
-function strictParseBoolean(value: string | null | undefined): boolean {
-  if (value === null || value === undefined) {
-    throw new Error('Invalid boolean value: null or undefined')
-  }
-
-  const lowerValue = value.toLowerCase().trim()
-
-  if (lowerValue === 'true' || lowerValue === '1' || lowerValue === 'yes') {
-    return true
-  } else if (
-    lowerValue === 'false' ||
-    lowerValue === '0' ||
-    lowerValue === 'no'
-  ) {
-    return false
-  } else {
-    throw new Error(`Invalid boolean value: ${value}`)
-  }
 }

@@ -5,10 +5,8 @@ updates:
     schedule:
       interval: weekly
     groups:
-      actions-minor:
-        update-types:
-          - minor
-          - patch
+      actions:
+        update-types: [minor, patch]
 
   - package-ecosystem: npm
     directory: /
@@ -17,10 +15,7 @@ updates:
     groups:
       npm-development:
         dependency-type: development
-        update-types:
-          - minor
-          - patch
+        update-types: [minor, patch]
       npm-production:
         dependency-type: production
-        update-types:
-          - patch
+        update-types: [minor, patch]

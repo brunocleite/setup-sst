@@ -1,31 +1,56 @@
-name: 'setup-sst-v3'
-description: 'Setup SST with caching enabled'
+name: 'Setup SST'
+description:
+  'Install and cache SST providers so your workflows skip the slow provider
+  download on every run.'
 author: 'Bruno Leite'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
   icon: 'zap'
-  color: 'blue'
+  color: 'orange'
 
-# Define your inputs here.
 inputs:
   sst-path:
-    description: 'The SST folder path. `sst.config.ts` should be here.'
+    description:
+      'Folder containing `sst.config.ts`. Defaults to the repository root.'
     default: './'
   lockfile-path:
     description:
-      "the 'lockfile' file location. Defaults to './package-lock.json'"
-    default: './package-lock.json'
+      'Path to the lockfile used to determine the SST version. Supports
+      package-lock.json, npm-shrinkwrap.json, bun.lock, bun.lockb,
+      pnpm-lock.yaml and yarn.lock. Auto-detected when not set.'
+    default: ''
   platform-only:
     description:
-      "Only caches the SST platform files on '.sst/platform'. Useful for a
-      linting-only run that will not deploy."
+      'Cache only `.sst/platform` and skip the provider binaries. Useful for
+      type-check or lint jobs that never deploy.'
+    default: 'false'
+  cache-key-suffix:
+    description:
+      'Extra string appended to the cache key. Use it to keep separate caches
+      for separate apps in a monorepo.'
+    default: ''
+  skip-install:
+    description:
+      'Restore the cache but never run `sst install` on a miss. Useful for jobs
+      that only want a warm cache if one already exists.'
     default: 'false'
   debug:
-    description: 'Prints SST installation logs to the console'
+    description: 'Print the full SST installation log.'
     default: 'false'
 
+outputs:
+  cache-hit:
+    description: 'true when the SST cache was restored, false otherwise.'
+  cache-key:
+    description: 'The cache key used for this run.'
+  sst-version:
+    description:
+      'The SST version resolved from the lockfile. For binary `bun.lockb`
+      lockfiles this is a hash of the lockfile instead.'
+  package-manager:
+    description: 'The detected package manager: npm, bun, pnpm or yarn.'
+
 runs:
-  using: node20
+  using: node24
   main: dist/main/index.js
   post: dist/post/index.js

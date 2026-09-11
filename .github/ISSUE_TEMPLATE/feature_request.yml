@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an improvement to the action
+title: '[Feature]: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: |
+        Describe the situation you are in, not only the solution you have in
+        mind. It often turns out there is an easier fix.
+      placeholder: My monorepo has three SST apps and I want one cache per app.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like the action to do?
+      placeholder:
+        Accept a `cache-key-suffix` input that is appended to the cache key.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including any workaround you are using today.

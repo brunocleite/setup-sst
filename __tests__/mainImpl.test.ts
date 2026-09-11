@@ -1,150 +1,276 @@
 /**
- * Unit tests for the action's main functionality, src/main.ts
+ * Tests for the main step.
  *
- * These should be run as if the action was called from a workflow.
- * Specifically, the inputs listed in `action.yml` should be set as environment
- * variables following the pattern `INPUT_<INPUT_NAME>`.
+ * Inputs are mocked at `core.getInput` rather than through `INPUT_*`
+ * environment variables so each case can vary one input at a time.
  */
 
 import * as core from '@actions/core'
 import * as cache from '@actions/cache'
-import * as mainImpl from '../src/mainImpl'
-import { Input } from '../src/contants'
+import * as exec from '@actions/exec'
+import * as glob from '@actions/glob'
+import * as path from 'path'
+import { mainImpl, mainRun } from '../src/mainImpl'
+import { Input, Output, State } from '../src/constants'
 
-// Mock the action's main function
-const runMock = jest.spyOn(mainImpl, 'mainImpl')
+const fixtures = path.resolve(__dirname, '../__test_environments__')
+const npmFixture = path.join(fixtures, 'with-npm')
 
-// Mock the GitHub Actions core library
-let errorMock: jest.SpiedFunction<typeof core.error>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
-let restoreCache: jest.SpiedFunction<typeof cache.restoreCache>
-let saveCache: jest.SpiedFunction<typeof cache.saveCache>
+let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+let saveStateMock: jest.SpiedFunction<typeof core.saveState>
+let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
+let restoreCacheMock: jest.SpiedFunction<typeof cache.restoreCache>
+let saveCacheMock: jest.SpiedFunction<typeof cache.saveCache>
+let execMock: jest.SpiedFunction<typeof exec.exec>
 
-describe('main action', () => {
+type Inputs = Partial<Record<Input, string>>
+
+const mockInputs = (inputs: Inputs): void => {
+  getInputMock.mockImplementation((name: string) => inputs[name as Input] ?? '')
+}
+
+describe('mainImpl', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.HOME = '/home/runner'
+    process.env.RUNNER_OS = 'Linux'
 
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    restoreCache = jest.spyOn(cache, 'restoreCache').mockImplementation()
-    saveCache = jest.spyOn(cache, 'saveCache').mockImplementation()
+    setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
+    saveStateMock = jest.spyOn(core, 'saveState').mockImplementation()
+    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
+    jest.spyOn(core, 'info').mockImplementation()
+    restoreCacheMock = jest.spyOn(cache, 'restoreCache').mockImplementation()
+    saveCacheMock = jest.spyOn(cache, 'saveCache').mockImplementation()
+    execMock = jest.spyOn(exec, 'exec').mockResolvedValue(0)
+    jest.spyOn(glob, 'hashFiles').mockResolvedValue('confighash')
   })
 
-  interface InputMock {
-    sstPath?: string
-    lockfilePath?: string
-    platformOnly?: boolean
-  }
+  describe('on a cache hit', () => {
+    beforeEach(() => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json')
+      })
+      restoreCacheMock.mockResolvedValue('Linux-sst-3.0.107-confighash')
+    })
 
-  const mockInputs = (inputMock: InputMock): void => {
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case Input.SstPath:
-          return inputMock.sstPath || ''
-        case Input.LockfilePath:
-          return inputMock.lockfilePath || ''
-        case Input.PlatformOnly:
-          return String(inputMock.platformOnly) || ''
-        default:
-          return ''
+    it('does not install SST', async () => {
+      await mainImpl()
+      expect(execMock).not.toHaveBeenCalled()
+      expect(saveCacheMock).not.toHaveBeenCalled()
+    })
+
+    it('reports cache-hit as true', async () => {
+      await mainImpl()
+      expect(setOutputMock).toHaveBeenCalledWith(Output.CacheHit, true)
+    })
+
+    it('records the matched key for the post step', async () => {
+      await mainImpl()
+      expect(saveStateMock).toHaveBeenCalledWith(
+        State.CacheMatchedKey,
+        'Linux-sst-3.0.107-confighash'
+      )
+    })
+  })
+
+  describe('on a cache miss', () => {
+    beforeEach(() => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json')
+      })
+      restoreCacheMock.mockResolvedValue(undefined)
+    })
+
+    it('installs SST with the package manager from the lockfile', async () => {
+      await mainImpl()
+      expect(execMock).toHaveBeenCalledWith(
+        'npx',
+        ['sst', 'install'],
+        expect.objectContaining({ cwd: npmFixture })
+      )
+    })
+
+    it('reports cache-hit as false', async () => {
+      await mainImpl()
+      expect(setOutputMock).toHaveBeenCalledWith(Output.CacheHit, false)
+    })
+
+    it('passes --print-logs when debug is enabled', async () => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json'),
+        [Input.Debug]: 'true'
+      })
+      await mainImpl()
+      expect(execMock).toHaveBeenCalledWith(
+        'npx',
+        ['sst', 'install', '--print-logs'],
+        expect.anything()
+      )
+    })
+
+    it('does not install when skip-install is enabled', async () => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json'),
+        [Input.SkipInstall]: 'true'
+      })
+      await mainImpl()
+      expect(execMock).not.toHaveBeenCalled()
+    })
+
+    it('fails with a helpful message when sst install exits non-zero', async () => {
+      execMock.mockResolvedValue(1)
+      await expect(mainImpl()).rejects.toThrow(/failed with exit code 1/)
+    })
+
+    it('refuses to install when SST is absent from node_modules', async () => {
+      // Guards against a cache poisoned with the wrong SST major: `npx sst`
+      // downloads the latest release when nothing is installed locally.
+      const bare = path.join(fixtures, 'with-pnpm')
+      mockInputs({ [Input.SstPath]: bare })
+      await expect(mainImpl()).rejects.toThrow(
+        /SST is not installed in node_modules/
+      )
+      expect(execMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('cache scope', () => {
+    beforeEach(() => {
+      restoreCacheMock.mockResolvedValue('hit')
+    })
+
+    it('caches the platform, plugins and bin directories by default', async () => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json')
+      })
+      await mainImpl()
+      const [paths] = restoreCacheMock.mock.calls[0]
+      expect(paths).toHaveLength(3)
+      expect(paths[0]).toContain(path.join('.sst', 'platform'))
+    })
+
+    it('caches only the platform directory when platform-only is set', async () => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json'),
+        [Input.PlatformOnly]: 'true'
+      })
+      await mainImpl()
+      const [paths, key] = restoreCacheMock.mock.calls[0]
+      expect(paths).toHaveLength(1)
+      expect(key).toContain('-sst-platform-')
+    })
+
+    it('appends the cache-key-suffix to the key', async () => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json'),
+        [Input.CacheKeySuffix]: 'api'
+      })
+      await mainImpl()
+      const [, key] = restoreCacheMock.mock.calls[0]
+      expect(key).toMatch(/-api$/)
+    })
+  })
+
+  describe('lockfile auto-detection', () => {
+    it('finds the lockfile in the SST folder when none is configured', async () => {
+      mockInputs({ [Input.SstPath]: npmFixture })
+      restoreCacheMock.mockResolvedValue('hit')
+      await mainImpl()
+      expect(setOutputMock).toHaveBeenCalledWith(Output.PackageManager, 'npm')
+    })
+
+    it('detects pnpm from its lockfile', async () => {
+      const pnpmFixture = path.join(fixtures, 'with-pnpm')
+      mockInputs({ [Input.SstPath]: pnpmFixture })
+      restoreCacheMock.mockResolvedValue('hit')
+      await mainImpl()
+      expect(setOutputMock).toHaveBeenCalledWith(Output.PackageManager, 'pnpm')
+      expect(setOutputMock).toHaveBeenCalledWith(Output.SstVersion, '3.19.3')
+    })
+
+    it('detects yarn from its lockfile', async () => {
+      mockInputs({ [Input.SstPath]: path.join(fixtures, 'with-yarn') })
+      restoreCacheMock.mockResolvedValue('hit')
+      await mainImpl()
+      expect(setOutputMock).toHaveBeenCalledWith(Output.PackageManager, 'yarn')
+    })
+  })
+
+  describe('input validation', () => {
+    it('fails when sst.config.ts is missing', async () => {
+      mockInputs({ [Input.SstPath]: '/nonexistent' })
+      await expect(mainImpl()).rejects.toThrow(/No 'sst.config.ts' found/)
+    })
+
+    it('fails when no lockfile can be found', async () => {
+      mockInputs({ [Input.SstPath]: fixtures })
+      // The fixtures root has an sst.config.ts in each child, not itself.
+      await expect(mainImpl()).rejects.toThrow(/No 'sst.config.ts' found/)
+    })
+
+    it('rejects a non-boolean platform-only value', async () => {
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json'),
+        [Input.PlatformOnly]: 'maybe'
+      })
+      await expect(mainImpl()).rejects.toThrow(/Invalid value for the/)
+    })
+
+    it('accepts the boolean spellings GitHub users expect', async () => {
+      restoreCacheMock.mockResolvedValue('hit')
+      for (const value of ['TRUE', 'yes', 'on', '1']) {
+        jest.clearAllMocks()
+        mockInputs({
+          [Input.SstPath]: npmFixture,
+          [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json'),
+          [Input.PlatformOnly]: value
+        })
+        await mainImpl()
+        const [paths] = restoreCacheMock.mock.calls[0]
+        expect(paths).toHaveLength(1)
       }
     })
-  }
 
-  it('with existing SST folder and cache hit should not install SST', async () => {
-    mockInputs({
-      sstPath: './__test_environments__/with-npm',
-      lockfilePath: './__test_environments__/with-npm/package-lock.json',
-      platformOnly: false
+    it('fails when the home directory cannot be determined', async () => {
+      delete process.env.HOME
+      delete process.env.USERPROFILE
+      mockInputs({
+        [Input.SstPath]: npmFixture,
+        [Input.LockfilePath]: path.join(npmFixture, 'package-lock.json')
+      })
+      await expect(mainImpl()).rejects.toThrow(/home directory/)
     })
+  })
+})
 
-    restoreCache.mockImplementation(async () => {
-      return 'some-cache-key'
-    })
-
-    await mainImpl.mainImpl()
-    expect(runMock).toHaveReturned()
-
-    expect(errorMock).not.toHaveBeenCalled()
-    expect(saveCache).not.toHaveBeenCalled()
-    expect(restoreCache).toHaveBeenCalledTimes(1)
-
-    // Verify that all the core library functions were called correctly
-    // expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    // expect(debugMock).toHaveBeenNthCalledWith(
-    //   2,
-    //   expect.stringMatching(timeRegex)
-    // )
-    // expect(debugMock).toHaveBeenNthCalledWith(
-    //   3,
-    //   expect.stringMatching(timeRegex)
-    // )
-    // expect(setOutputMock).toHaveBeenNthCalledWith(
-    //   1,
-    //   'time',
-    //   expect.stringMatching(timeRegex)
-    // )
+describe('mainRun', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.spyOn(core, 'info').mockImplementation()
+    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
+    saveStateMock = jest.spyOn(core, 'saveState').mockImplementation()
+    jest
+      .spyOn(core, 'getInput')
+      .mockImplementation((name: string) =>
+        name === String(Input.SstPath) ? '/nonexistent' : ''
+      )
   })
 
-  it('with existing SST folder and cache miss should install SST', async () => {
-    mockInputs({
-      sstPath: './__test_environments__/with-npm',
-      lockfilePath: './__test_environments__/with-npm/package-lock.json',
-      platformOnly: false
-    })
-    restoreCache.mockImplementation(async () => {
-      return undefined
-    })
-
-    await mainImpl.mainImpl()
-    expect(runMock).toHaveReturned()
-
-    expect(errorMock).not.toHaveBeenCalled()
-    expect(saveCache).not.toHaveBeenCalled()
-    expect(restoreCache).toHaveBeenCalled()
-
-    const firstCallArgs = restoreCache.mock.calls[0]
-    expect(firstCallArgs[1]).toMatch(/\b(?=.*-sst-)(?!.*-sst-platform-).*$/)
-  }, 120000)
-
-  it('with lockfile containing that has no SST dependency should fail as SST module is not on package-lock.json file', async () => {
-    mockInputs({
-      sstPath: './__test_environments__/with-npm',
-      lockfilePath: '',
-      platformOnly: false
-    })
-    await expect(async () => mainImpl.mainImpl()).rejects.toThrow(
-      'SST module is not on package-lock.json, install it first'
+  it('marks the run failed and records the failure state', async () => {
+    await mainRun()
+    expect(setFailedMock).toHaveBeenCalledWith(
+      expect.stringContaining("No 'sst.config.ts' found")
     )
-    expect(runMock).toHaveReturned()
-    expect(errorMock).not.toHaveBeenCalled()
-  })
-
-  it('with invalid lockfile should fail with node_modules not found', async () => {
-    mockInputs({ lockfilePath: '/invalid/invalid_folder', platformOnly: false })
-    await expect(async () => mainImpl.mainImpl()).rejects.toThrow(
-      'node_modules folder not found, please run npm install first'
-    )
-    expect(runMock).toHaveReturned()
-    expect(errorMock).not.toHaveBeenCalled()
-  })
-
-  it('with SST folder and bun lockfile and cache hit should not install SST', async () => {
-    mockInputs({
-      sstPath: './__test_environments__/with-bun',
-      lockfilePath: './__test_environments__/with-bun/bun.lockb',
-      platformOnly: false
-    })
-
-    restoreCache.mockImplementation(async () => {
-      return 'some-cache-key'
-    })
-
-    await mainImpl.mainImpl()
-    expect(runMock).toHaveReturned()
-
-    expect(errorMock).not.toHaveBeenCalled()
-    expect(saveCache).not.toHaveBeenCalled()
-    expect(restoreCache).toHaveBeenCalledTimes(1)
+    expect(saveStateMock).toHaveBeenCalledWith(State.Failed, 'true')
   })
 })
