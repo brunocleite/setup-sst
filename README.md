@@ -4,7 +4,7 @@
 [![Check dist/](https://github.com/brunocleite/setup-sst/actions/workflows/check-dist.yml/badge.svg)](https://github.com/brunocleite/setup-sst/actions/workflows/check-dist.yml)
 [![CodeQL](https://github.com/brunocleite/setup-sst/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/brunocleite/setup-sst/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
-[![Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Setup%20SST-blue?logo=github)](https://github.com/marketplace/actions/setup-sst)
+[![Marketplace](https://img.shields.io/badge/GitHub%20Marketplace-Setup%20SST%20Cache-blue?logo=github)](https://github.com/marketplace/actions/setup-sst-cache)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 **Stop downloading Pulumi providers on every CI run.** This GitHub Action runs
