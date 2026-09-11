@@ -1,4 +1,4 @@
-name: 'Setup SST'
+name: 'setup-sst-v3'
 description:
   'Install and cache SST providers so your workflows skip the slow provider
   download on every run.'
