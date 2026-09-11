@@ -88,11 +88,12 @@
       }
     }
   },
+  "_dependencyNotes": "These @actions/* versions are the newest CommonJS releases. The next major of each is ESM-only, which @vercel/ncc cannot bundle for a `using: node24` action — the build fails outright. Do not bump them past these majors until ncc supports it. @actions/cache must stay >=4 to use the current Actions Cache Service.",
   "dependencies": {
-    "@actions/cache": "^5.2.0",
-    "@actions/core": "^2.0.3",
-    "@actions/exec": "^2.0.0",
-    "@actions/glob": "^0.5.1"
+    "@actions/cache": "~5.2.0",
+    "@actions/core": "~2.0.3",
+    "@actions/exec": "~2.0.0",
+    "@actions/glob": "~0.5.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

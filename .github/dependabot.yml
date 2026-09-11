@@ -19,3 +19,9 @@ updates:
       npm-production:
         dependency-type: production
         update-types: [minor, patch]
+    # The next major of each @actions/* package is ESM-only, which ncc cannot
+    # bundle for a node24 action. Majors must be adopted deliberately, not by
+    # an automated PR. See "_dependencyNotes" in package.json.
+    ignore:
+      - dependency-name: '@actions/*'
+        update-types: ['version-update:semver-major']
