@@ -1,0 +1,1 @@
+{ "name": "test-sst-app-pnpm", "version": "0.0.1", "dependencies": { "sst": "3.19.3" } }

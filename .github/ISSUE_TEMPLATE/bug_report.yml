@@ -1,0 +1,82 @@
+name: Bug report
+description: Something in the action does not work as documented
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The more of this you fill in, the faster it gets fixed.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+      placeholder:
+        The cache was never restored, so `sst install` ran on every job.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Your workflow step
+      description: The `setup-sst` step from your workflow file.
+      render: yaml
+      placeholder: |
+        - name: Setup SST
+          uses: brunocleite/setup-sst@v1
+          with:
+            sst-path: './'
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Action version
+      description: The tag or SHA you used in `uses:`.
+      placeholder: v1.2.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package-manager
+    attributes:
+      label: Package manager
+      options:
+        - npm
+        - bun
+        - pnpm
+        - yarn
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runner
+    attributes:
+      label: Runner OS
+      options:
+        - ubuntu-latest
+        - macos-latest
+        - windows-latest
+        - self-hosted
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: sst-version
+    attributes:
+      label: SST version
+      placeholder: 3.17.10
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        Paste the log from the `Setup SST` step. Re-run with `debug: true` for
+        more detail. This is rendered as code, so no backticks needed.
+      render: shell

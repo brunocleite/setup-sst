@@ -1,0 +1,58 @@
+# Publishes a release when a `v*` tag is pushed, then moves the floating major
+# tag (for example `v1`) so consumers pinned to it receive the update.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify the release is green
+        run: |
+          npm run lint
+          npm run ci-test
+
+      - name: Verify dist/ matches src/
+        run: |
+          npm run package
+          if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt 0 ]; then
+            echo "::error::dist/ is out of date for this tag. Rebuild and re-tag."
+            exit 1
+          fi
+
+      - name: Create the GitHub release
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move the major tag
+        run: |
+          major="${GITHUB_REF_NAME%%.*}"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag -fa "$major" -m "Update $major to $GITHUB_REF_NAME"
+          git push origin "$major" --force
+          echo "Moved $major to $GITHUB_REF_NAME"

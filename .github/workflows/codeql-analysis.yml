@@ -2,17 +2,14 @@ name: CodeQL
 
 on:
   pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [main]
   schedule:
+    # Weekly, so the workflow is never disabled for inactivity.
     - cron: '31 7 * * 3'
 
 permissions:
   actions: read
-  checks: write
   contents: read
   security-events: write
 
@@ -24,25 +21,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language:
-          - TypeScript
+        language: [javascript-typescript]
 
     steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Initialize CodeQL
-        id: initialize
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          # Only first-party code; dist/ is a generated bundle.
           source-root: src
 
-      - name: Autobuild
-        id: autobuild
-        uses: github/codeql-action/autobuild@v3
-
       - name: Perform CodeQL Analysis
-        id: analyze
         uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
