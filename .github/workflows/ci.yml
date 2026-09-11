@@ -129,14 +129,16 @@ jobs:
         working-directory: __test_environments__/with-npm
         run: npm ci
 
-      # A unique suffix keeps this run's cache from colliding with other runs,
-      # so the assertions below are deterministic.
+      # `run_attempt` is part of the suffix so a re-run of this workflow gets a
+      # fresh key. Without it a re-run would restore the cache its first attempt
+      # saved, and the cache-miss assertion below would fail.
       - name: Prime the cache
         id: first
         uses: ./
         with:
           sst-path: './__test_environments__/with-npm'
-          cache-key-suffix: roundtrip-${{ github.run_id }}
+          cache-key-suffix:
+            roundtrip-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: The first run must be a cache miss
         run: |
@@ -145,10 +147,9 @@ jobs:
             exit 1
           fi
 
-      # The post step saves the cache when the job ends, so a second run in the
-      # same job cannot observe it. This job proves the miss path and the
-      # `skip-install` path; the restore itself is covered by the workflow
-      # below, which runs after this one has saved its cache.
+      # The post step saves the cache only when the job ends, so a restore
+      # cannot be observed from within this job. Restoring is instead asserted
+      # against a key primed earlier in the same workflow run, below.
       - name: Remove the installed platform
         run: rm -rf __test_environments__/with-npm/.sst
 
@@ -170,3 +171,45 @@ jobs:
             echo "::error::skip-install still installed SST."
             exit 1
           fi
+
+  test-cache-restore:
+    name: Cache restores without reinstalling
+    runs-on: ubuntu-latest
+    needs: test-cache-roundtrip
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Install SST in the fixture app
+        working-directory: __test_environments__/with-npm
+        run: npm ci
+
+      # `test-cache-roundtrip` saved this exact key in its post step, so this
+      # job — which starts only after that one finished — must hit it.
+      - name: Restore the cache primed by the previous job
+        id: restore
+        uses: ./
+        with:
+          sst-path: './__test_environments__/with-npm'
+          cache-key-suffix:
+            roundtrip-${{ github.run_id }}-${{ github.run_attempt }}
+          skip-install: true
+
+      - name: Verify the cache was restored
+        run: |
+          if [ "${{ steps.restore.outputs.cache-hit }}" != "true" ]; then
+            echo "::error::Expected to restore the cache primed by the previous job."
+            exit 1
+          fi
+
+          platform="__test_environments__/with-npm/.sst/platform"
+          if [ ! -f "$platform/version" ]; then
+            echo "::error::Cache reported a hit but '$platform' was not restored."
+            exit 1
+          fi
+
+          echo "Restored SST v$(cat "$platform/version") from cache without installing."
