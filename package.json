@@ -18,7 +18,6 @@
     "node",
     "setup",
     "sst",
-    "sst-v3",
     "ion",
     "iac",
     "pulumi",
