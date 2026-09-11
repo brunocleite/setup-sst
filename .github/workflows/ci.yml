@@ -147,21 +147,40 @@ jobs:
             exit 1
           fi
 
-      # The post step saves the cache only when the job ends, so a restore
-      # cannot be observed from within this job. Restoring is instead asserted
-      # against a key primed earlier in the same workflow run, below.
-      - name: Remove the installed platform
-        run: rm -rf __test_environments__/with-npm/.sst
+      - name: Verify SST was installed on the miss
+        run: |
+          platform="__test_environments__/with-npm/.sst/platform"
+          if [ ! -f "$platform/version" ]; then
+            echo "::error::Expected 'sst install' to run on a cache miss."
+            exit 1
+          fi
+          echo "Installed SST v$(cat "$platform/version")"
 
-      - name: skip-install must not install on a miss
+  test-skip-install:
+    name: skip-install does not install on a miss
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Install SST in the fixture app
+        working-directory: __test_environments__/with-npm
+        run: npm ci
+
+      - name: Run against a key that cannot exist
         id: skipped
         uses: ./
         with:
           sst-path: './__test_environments__/with-npm'
-          cache-key-suffix: never-exists-${{ github.run_id }}
+          cache-key-suffix:
+            never-exists-${{ github.run_id }}-${{ github.run_attempt }}
           skip-install: true
 
-      - name: Verify skip-install left SST uninstalled
+      - name: Verify SST was left uninstalled
         run: |
           if [ "${{ steps.skipped.outputs.cache-hit }}" != "false" ]; then
             echo "::error::Expected a cache miss for a key that cannot exist."
