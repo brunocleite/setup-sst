@@ -90,7 +90,7 @@
   },
   "dependencies": {
     "@actions/cache": "^5.2.0",
-    "@actions/core": "^2.0.3",
+    "@actions/core": "^3.0.1",
     "@actions/exec": "^2.0.0",
     "@actions/glob": "^0.5.1"
   },
