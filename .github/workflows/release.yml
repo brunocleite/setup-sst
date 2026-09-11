@@ -26,9 +26,13 @@ jobs:
 
       - run: npm ci
 
+      - name: Install test fixtures
+        run: npm run test:fixtures
+
       - name: Verify the release is green
         run: |
           npm run lint
+          npx tsc --noEmit -p tsconfig.test.json
           npm run ci-test
 
       - name: Verify dist/ matches src/

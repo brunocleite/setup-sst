@@ -9,12 +9,46 @@ import * as core from '@actions/core'
 import * as cache from '@actions/cache'
 import * as exec from '@actions/exec'
 import * as glob from '@actions/glob'
+import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 import { mainImpl, mainRun } from '../src/mainImpl'
 import { Input, Output, State } from '../src/constants'
 
 const fixtures = path.resolve(__dirname, '../__test_environments__')
-const npmFixture = path.join(fixtures, 'with-npm')
+
+/**
+ * A self-contained SST app with SST present in `node_modules`.
+ *
+ * Built in a temp directory rather than reusing `__test_environments__` so the
+ * install path can be tested without depending on whether `npm ci` has been run
+ * in the fixtures.
+ */
+let npmFixture: string
+
+beforeAll(() => {
+  npmFixture = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-sst-'))
+
+  fs.copyFileSync(
+    path.join(fixtures, 'with-npm', 'package-lock.json'),
+    path.join(npmFixture, 'package-lock.json')
+  )
+  fs.copyFileSync(
+    path.join(fixtures, 'with-npm', 'sst.config.ts'),
+    path.join(npmFixture, 'sst.config.ts')
+  )
+
+  const sstModule = path.join(npmFixture, 'node_modules', 'sst')
+  fs.mkdirSync(sstModule, { recursive: true })
+  fs.writeFileSync(
+    path.join(sstModule, 'package.json'),
+    JSON.stringify({ name: 'sst', version: '3.19.3' })
+  )
+})
+
+afterAll(() => {
+  fs.rmSync(npmFixture, { recursive: true, force: true })
+})
 
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
@@ -131,12 +165,23 @@ describe('mainImpl', () => {
     it('refuses to install when SST is absent from node_modules', async () => {
       // Guards against a cache poisoned with the wrong SST major: `npx sst`
       // downloads the latest release when nothing is installed locally.
-      const bare = path.join(fixtures, 'with-pnpm')
+      const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-sst-bare-'))
+      fs.copyFileSync(
+        path.join(fixtures, 'with-npm', 'package-lock.json'),
+        path.join(bare, 'package-lock.json')
+      )
+      fs.copyFileSync(
+        path.join(fixtures, 'with-npm', 'sst.config.ts'),
+        path.join(bare, 'sst.config.ts')
+      )
+
       mockInputs({ [Input.SstPath]: bare })
       await expect(mainImpl()).rejects.toThrow(
         /SST is not installed in node_modules/
       )
       expect(execMock).not.toHaveBeenCalled()
+
+      fs.rmSync(bare, { recursive: true, force: true })
     })
   })
 
