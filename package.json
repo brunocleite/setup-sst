@@ -1,7 +1,7 @@
 {
   "name": "setup-sst",
   "description": "GitHub Action to install and cache SST providers, cutting minutes off every CI run",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Bruno Leite",
   "private": true,
   "homepage": "https://github.com/brunocleite/setup-sst",
